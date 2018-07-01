@@ -1,8 +1,8 @@
 function JETPEAK_to_gs2_input(ijp,psinrm_in,outfile_template,outfile_name,plot_verbose)
 
 % loading databases
-load /home/christen/matlab/JETPEAK/databases/JETPEAK_2017_04_1661torq.mat
-load /home/christen/matlab/JETPEAK/databases/TRANSP_2017_3.mat
+load ~/Dropbox/oxford/physics/jetpeak/databases/JETPEAK_2017_04_1661torq.mat
+load ~/Dropbox/oxford/physics/jetpeak/databases/TRANSP_2017_3.mat
 
 warning('ONLY HAVE NB TORQUE DEPOSITION FOR ijp=1661 ...')
 
@@ -106,7 +106,7 @@ dp_drho=interpol(rhoc_TRANSP,p,rhoc_TRANSP,1);
 omega = interpol(sqrt_psin_chain2,ION.ANGF(ijp,:),sqrt_psin_TRANSP);
 domega_drho = interpol(rhoc_TRANSP,omega,rhoc_TRANSP,1);
 sign_omega = sign(omega(iflxsurf))*sign(BASIC.IP(ijp)); % see notes about signs
-sign_domega_drho = sign_q*sign(domega_drho(iflxsurf))*sign_omega; % see notes about signs
+sign_domega_drho = sign_q*sign(domega_drho(iflxsurf))*sign(BASIC.IP(ijp)); % see notes about signs
 omega = sign_omega*omega;
 domega_drho = sign_domega_drho*domega_drho;
 
