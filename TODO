@@ -4,3 +4,5 @@ If it contains EQUI.PSIN instead, should we redefine sqrt_psin_chain2 to use the
 -- Are temperatures in eV ?
 
 -- Is ION.ANGF in [s^-1] ?
+
+-- Make file reading more flexible (no 'name = val' required)
