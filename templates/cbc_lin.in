@@ -25,16 +25,16 @@
 
 ! following describes shape 
 ! and location of flux surface
- rhoc = 0.54  ! r/a
- shat = 0.8 ! r/q * dq/dr
- qinp = 1.4 ! q
- Rmaj = 3.0 ! R/a
- R_geo = 3.0 ! R/a
- shift = 0.0 ! dR/dr
- akappa = 1.0 ! elongation
- akappri = 0.0 ! dkappa/dr
- tri = 0.0 ! triangularity
- tripri = 0.0 ! dtri/dr
+ rhoc = 0.54
+ shat = 0.8
+ qinp = 1.4
+ Rmaj = 3.0
+ R_geo = 3.0
+ shift = 0.0
+ akappa = 1.0
+ akappri = 0.0
+ tri = 0.0
+ tripri = 0.0
 /
 &parameters
  beta = 0.0
@@ -139,9 +139,9 @@
  mass = 1.0
  dens = 1.0
  temp = 1.0
- tprim = 2.3  ! -d(ln T)/d (r/a)
- fprim = 0.733  ! same thing for density
- vnewk = 0.0  ! collision frequency (normalized by a/v_tref)
+ tprim = 2.3
+ fprim = 0.733
+ vnewk = 0.0
  type = 'ion'
 /
 &dist_fn_species_knobs_1
