@@ -16,6 +16,10 @@
 % All quantities are in SI units,
 % except for temperatures which are in eV.
 %
+% Plots can be generated to visually check parameters and fits:
+% below, set plot_verbose_main = 1,
+% and/or plot_verbose_Ipsi_integration = 0
+%
 function JETPEAK_to_gs2_input(ijp,psinrm_in,infile_template,new_infile_name, ...
     plot_verbose_main, plot_verbose_Ipsi_integration)
 
@@ -62,9 +66,10 @@ sign_Rgeo = sign_q;
 psi=permute(TRANSP.T.PSI,[3 2 1]); % on rectangular grid
 psi=psi(:,:,itransp); % psi(iR,iZ)
 psiflu=permute(TRANSP.T.PLFLX,[2 1]); % on flux surface grid
-psiflu=psiflu(:,itransp); % psiflu(iflxsurf,itheta)
+psiflu=psiflu(:,itransp); % psiflu(iflxsurf)
 nflxsurf=numel(psiflu); % number of flux surf.
-[~,iflxsurf]=min(abs(psiflu-psinrm_in^2*psiflu(end))); % flux-grid point closest to user specified radial location
+% flux-grid point closest to user specified radial location
+[~,iflxsurf]=min(abs(psiflu-psinrm_in^2*psiflu(end)));
 
 % Normalized sqrt(psi) []
 sqrt_psin_TRANSP=zeros(1,nflxsurf);
@@ -75,22 +80,25 @@ end
 % Radial coordinates [m]
 Rmag=1.e-2*TRANSP.T.RAXIS(itransp);
 Rflu=1.e-2*permute(TRANSP.T.RFLU,[2 3 1]); % flux surface grid
-Rflu=Rflu(:,:,itransp);
+Rflu=Rflu(:,:,itransp); % (iflx,itheta)
 Rpsi= 1.e-2*TRANSP.T.PSIR; % rectangular grid
 a=(TRANSP.G.RMAJM(itransp,end)-TRANSP.G.RMAJM(itransp,1))/2.; % GS2 Lref
 rpsi_TRANSP=zeros(1,nflxsurf); % GS2 definition of rho for irho=2, not yet normalized
 Rmaj=zeros(1,nflxsurf); % Rmaj definition for iflux ~= 1, not yet normalized
 for indx=1:nflxsurf
-    rpsi_TRANSP(indx)=(TRANSP.G.RMAJM(itransp,nflxsurf+1+indx)-TRANSP.G.RMAJM(itransp,nflxsurf+1-indx))/2.;
+    rpsi_TRANSP(indx)= ...
+        (TRANSP.G.RMAJM(itransp,nflxsurf+1+indx) ...
+           - TRANSP.G.RMAJM(itransp,nflxsurf+1-indx))/2.;
     Rmaj(indx)=TRANSP.G.RMAJM(itransp,nflxsurf+1+indx)-rpsi_TRANSP(indx);
 end
-Rgeo=sign_Rgeo*abs(Rmaj(iflxsurf)); % Free choice for Rgeo. This then defines Bref., see notes about signs
+% Free choice for Rgeo. This then defines Bref., see notes about signs
+Rgeo=sign_Rgeo*abs(Rmaj(iflxsurf));
 dR_drho=interpol(rpsi_TRANSP,Rmaj,rpsi_TRANSP,1);
 
 % Vertical coord. [m]
 Zmag=1.e-2*TRANSP.T.YAXIS(itransp);
 Zflu=1.e-2*permute(TRANSP.T.ZFLU,[2 3 1]);
-Zflu=Zflu(:,:,itransp);
+Zflu=Zflu(:,:,itransp); % (iflx,itheta)
 Zpsi= 1.e-2*TRANSP.T.PSIZ;
 
 % Elongation []
@@ -154,8 +162,10 @@ dp_drho=interpol(rpsi_TRANSP,p,rpsi_TRANSP,1);
 % Tor. angular vel. [s^{-1}]
 omega = interpol(sqrt_psin_chain2,ION.ANGF(ijp,:),sqrt_psin_TRANSP);
 domega_drho = interpol(rpsi_TRANSP,omega,rpsi_TRANSP,1);
-sign_mach = sign(omega(iflxsurf))*sign(BASIC.IP(ijp)); % see notes about signs
-sign_domega_drho = sign(domega_drho(iflxsurf))*sign(BASIC.IP(ijp)); % see notes about signs
+% see notes about signs
+sign_mach = sign(omega(iflxsurf))*sign(BASIC.IP(ijp));
+% see notes about signs
+sign_domega_drho = sign(domega_drho(iflxsurf))*sign(BASIC.IP(ijp));
 omega = sign_mach*abs(omega);
 domega_drho = sign_domega_drho*abs(domega_drho);
 
@@ -174,8 +184,8 @@ Rflu_loc=permute(Rflu,[2 1]);
 Rflu_loc=Rflu_loc(:,iflxsurf); % Rflu for all poloidal locations on chosen flux surf
 Zflu_loc=permute(Zflu,[2 1]);
 Zflu_loc=Zflu_loc(:,iflxsurf); % Zflu for all poloidal locations on chosen flux surf
-I = compute_I(Rmag,Zmag,Rflu_loc,Zflu_loc,Rpsi,Zpsi,psi,q(iflxsurf),psiflu(iflxsurf),...
-    plot_verbose_Ipsi_integration);
+I = compute_I(Rmag,Zmag,Rflu_loc,Zflu_loc,Rpsi,Zpsi,psi,q(iflxsurf), ...
+    psiflu(iflxsurf), plot_verbose_Ipsi_integration);
 % In GS2, Bref is defined via Bref=I/(Rgeo*a)
 Bref=abs(I/Rgeo); % no 1/a since Rgeo not normalised yet, see notes about signs
 
@@ -240,7 +250,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,Rmaj,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        Rmaj(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dR_drho(iflxsurf),'r-')
+        Rmaj(iflxsurf)+ ...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dR_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$R_\psi$','Interpreter','LaTex')
@@ -253,7 +264,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,kappa,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        kappa(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dkappa_drho(iflxsurf),'r-')
+        kappa(iflxsurf)+ ...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dkappa_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$\kappa$','Interpreter','LaTex')
@@ -266,7 +278,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,delta,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        delta(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*ddelta_drho(iflxsurf),'r-')
+        delta(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*ddelta_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$\delta$','Interpreter','LaTex')
@@ -317,7 +330,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,q,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        q(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dq_drho(iflxsurf),'r-')
+        q(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dq_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$q$','Interpreter','LaTex')
@@ -339,7 +353,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,ni,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        ni(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dni_drho(iflxsurf),'r-')
+        ni(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dni_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$n_i$','Interpreter','LaTex')
@@ -361,7 +376,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,ne,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        ne(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dne_drho(iflxsurf),'r-')
+        ne(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dne_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$n_e$','Interpreter','LaTex')
@@ -383,7 +399,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,nc,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        nc(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dnc_drho(iflxsurf),'r-')
+        nc(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dnc_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$n_C$','Interpreter','LaTex')
@@ -405,7 +422,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,ti,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        ti(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dti_drho(iflxsurf),'r-')
+        ti(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dti_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$T_i$','Interpreter','LaTex')
@@ -427,7 +445,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,te,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        te(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dte_drho(iflxsurf),'r-')
+        te(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dte_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$T_e$','Interpreter','LaTex')
@@ -442,7 +461,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,p,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        p(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dp_drho(iflxsurf),'r-')
+        p(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dp_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$p$','Interpreter','LaTex')
@@ -465,7 +485,8 @@ if plot_verbose_main
     plot(rpsi_TRANSP,omega,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        omega(iflxsurf)+(rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*domega_drho(iflxsurf),'r-')
+        omega(iflxsurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*domega_drho(iflxsurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$\Omega_\zeta$','Interpreter','LaTex')
