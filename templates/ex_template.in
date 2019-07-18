@@ -1,0 +1,178 @@
+!-------------------LINEAR CYCLONE ITG CASE-----------------------
+! Widely used benchmark case.  Original study published
+! in Phys. Plasmas Vol. 7, p. 969 (Dimits et al.)
+! Can compare linear.out file with linear.test, which
+! is included in this directory.
+!-----------------------------------------------------------------
+
+&collisions_knobs
+ collision_model='none'
+/
+
+!&hyper_knobs
+! hyper_option = 'visc_only'
+! const_amp = .false.
+! isotropic_shear = .false.
+! D_hypervisc = 0.1
+!/
+
+&theta_grid_knobs
+ equilibrium_option='eik'
+/
+&theta_grid_parameters
+ ntheta = 32
+ nperiod = 1
+
+! following describes shape 
+! and location of flux surface
+ rhoc = 0.54
+ shat = 0.8
+ qinp = 1.4
+ Rmaj = 3.0
+ R_geo = 3.0
+ shift = 0.0
+ akappa = 1.0
+ akappri = 0.0
+ tri = 0.0
+ tripri = 0.0
+/
+&parameters
+ beta = 0.0
+ zeff = 1.0
+/
+&theta_grid_eik_knobs
+ itor = 1
+ iflux = 0
+ irho = 2
+
+ ppl_eq = F
+ gen_eq = F
+ efit_eq = F
+ local_eq = T
+
+ eqfile = 'dskeq.cdf'
+ equal_arc = T
+ bishop = 4
+ s_hat_input = 0.8
+ beta_prime_input = 0.0
+ delrho = 1.e-3
+ isym = 0
+ writelots = F
+/
+&fields_knobs
+ field_option='implicit'
+/
+&gs2_diagnostics_knobs
+ print_flux_line = F  ! NL
+ write_nl_flux = T    ! NL
+ print_line = T       ! L
+ write_line = T       ! L
+ write_omega = T      ! L
+ write_final_fields = T
+ write_g = T
+ write_verr = T
+ write_zonal_transfer = F
+ write_collisional = F
+ nwrite=     50  ! how often diagnostics are written to file
+ navg=       50
+ nsave = 9000 ! how often restart files are written
+ omegatinst = 500.0
+! save_for_restart = .true.   ! NL
+ save_for_restart = .true.
+ omegatol = -1.0e-3
+/
+! velocity space grid
+&le_grids_knobs
+ ngauss = 5  ! 2*nguass is the number of untrapped pitch angles per sign of vpar
+ negrid = 12
+ vcut= 2.5  ! max |v| value on the grid
+/
+&dist_fn_knobs
+ adiabatic_option="iphi00=2"
+ gridfac=   1.0
+ boundary_option="linked"  ! twist and shift BC
+! boundary_option="default"  ! ballooning BC
+ !++++++ NDC ++++++
+ mach = 0.0
+ g_exb = 0.00
+ !+++++++++++++++++
+/
+
+&kt_grids_knobs
+ grid_option='box'  ! grid in kx and ky
+! grid_option='range' ! specified kx and ky values
+/
+&kt_grids_box_parameters
+ ! naky = (ny-1)/3 + 1
+ ny = 4
+ ! nakx = 2*(nx-1)/3 + 1
+ nx = 16
+ ! ky_min = 1/y0
+ y0 = 2.0
+ jtwist = 2
+/
+!&kt_grids_range_parameters
+! ntheta0=1 ! number of kx
+! theta0_min=0.
+! theta0_max=0.
+! naky = 1
+! aky_min = 0.5
+! aky_max = 0.5
+!/
+&init_g_knobs
+ chop_side = F
+ phiinit=   1.e-3  ! init amplitude of phi
+ restart_file = "nc/growth_init.nc"  ! if you have save_for_restart = .true.
+ ginit_option= "noise"
+/
+&knobs
+ fphi =   1.0  ! evolve phi
+ fapar =  0.0  ! do not evolve A_parallel
+ fbpar = 0.0   ! do not evolve B_parallel
+ delt = 0.05   ! time step size (normalized by a / v_tref)
+ nstep = 10000  ! number of time steps
+/
+&species_knobs
+ nspec =          2  ! # of kinetic species
+/
+&species_parameters_1
+ z =   1.0
+ mass =   1.0
+ dens =   1.0
+ temp =   1.0
+ tprim =  2.3
+ fprim =  0.733
+ vnewk =  0.0
+ type ='ion'
+/
+&dist_fn_species_knobs_1
+ fexpr = 0.48
+ bakdif = 0.02
+/
+&species_parameters_2
+ z =     -1.0
+ mass =   2.7e-4
+ dens =   1.0
+ temp =   1.0
+ tprim =  2.3
+ fprim =  0.733
+ vnewk =  0.0
+ type ='electron'
+/
+&dist_fn_species_knobs_2
+ fexpr = 0.48
+ bakdif = 0.02
+/
+&nonlinear_terms_knobs
+! nonlinear_mode='on'
+ nonlinear_mode='off'
+ cfl = 0.25
+/
+&reinit_knobs
+ delt_adj = 2.0
+ delt_minimum = 1.e-4
+/
+&layouts_knobs
+ layout = 'lxyes'  ! order for parallelization, from right to left
+ local_field_solve = F
+/

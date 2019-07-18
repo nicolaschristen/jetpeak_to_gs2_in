@@ -1,4 +1,15 @@
-function gs2_in=normalise_jet_out(jet_out)
+%% Apply GS2 normalisations to parameters extracted from JETPEAK/TRANSP
+%
+% Input :   jet_out -- structure array with dimensionful plasma parameters
+%           add_carbon -- =0 neglects C and adapts n_ion so that QN holds
+%                         =1 adds Carbon as an impurity
+%
+% Output:   gs2_in -- structure with dimensionless GS2 parameters
+%
+% All quantities are in SI units,
+% except for temperatures which are in eV
+%
+function gs2_in=normalise_jet_out(jet_out, add_carbon)
 
 % mag. const. in SI units
 mu0=pi*4.e-7;
@@ -49,5 +60,14 @@ gs2_in.tprim2=-1.*a/jet_out.te*jet_out.dte_drho;
 gs2_in.fprim2=-1.*a/jet_out.ne*jet_out.dne_drho;
 gs2_in.dens2=jet_out.ne/nref;
 gs2_in.temp2=jet_out.te/tref;
+
+% Carbon
+% species_parameters_3
+if add_carbon
+    gs2_in.tprim3=-1.*a/jet_out.tc*jet_out.dtc_drho;
+    gs2_in.fprim3=-1.*a/jet_out.nc*jet_out.dnc_drho;
+    gs2_in.dens3=jet_out.nc/nref;
+    gs2_in.temp3=jet_out.tc/tref;
+end
 
 end

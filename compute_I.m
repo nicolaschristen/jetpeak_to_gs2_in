@@ -1,9 +1,15 @@
 %% Compute I(psi), required to determine Bref
+%
 % Input :   Rmag,Zmag -- pos. of mag. axis
 %           Rflu,Zflu -- (R,Z) along chosen flux surf
 %           Rpsi,Zpsi,psi -- pol. flux on fine rectangular (Rpsi,Zpsi) mesh
 %           q -- safety factor on chosen flux surf.
-function I=compute_I(Rmag,Zmag,Rflu,Zflu,Rpsi,Zpsi,psi,q)
+%           psi_on_flxsurf -- value of psipol on chosen flux surf.
+%           plot_verbose -- flag to produce plots to check params & fits
+%
+% Output:   I -- I(psi) from B = I grad(phi) + grad(phi) x grad(psi)
+%
+function I=compute_I(Rmag,Zmag,Rflu,Zflu,Rpsi,Zpsi,psi,q,psi_on_flxsurf,plot_verbose)
 
 ntheta=numel(Rflu);
 r=zeros(1,ntheta);
@@ -11,19 +17,29 @@ theta=zeros(1,ntheta);
 dpsi_dr=zeros(1,ntheta);
 dpsi_dR=zeros(1,ntheta);
 dpsi_dZ=zeros(1,ntheta);
-int_theta=0.;
+
+if plot_verbose
+    fprintf('\nCoordinates for I(psi) integration\n')
+end
 
 for itheta=1:ntheta
-    %% Compute jacobian Jr from (r,theta,zeta) to (R,Z,zeta)
+    %% Compute (r,theta)
     r(itheta)=sqrt((Rflu(itheta)-Rmag)^2+ ...
         (Zflu(itheta)-Zmag)^2);
     
-    theta(itheta)=atan_2pi(Rflu(itheta)-Rmag, ...
-        Zflu(itheta)-Zmag);
-    % Correct last element of theta
-    % because atan_2pi returns theta(1)=theta(ntheta)
-    if itheta==ntheta 
-        theta(itheta)=2.*pi+theta(1);
+    % For first point, theta~0 can be slightly positive
+    % or slightly negative -> use std tan function
+    if itheta==1
+        theta(itheta)=atan((Zflu(itheta)-Zmag)/(Rflu(itheta)-Rmag));
+    % itheta=ntheta refers to the same point as itheta=1,
+    % shifted by 2pi
+    elseif itheta==ntheta
+        theta(itheta) = theta(1) + 2*pi;
+    % Otherwise, need 0<=theta<=2pi
+    % -> use atan_2pi function
+    else
+        theta(itheta)=atan_2pi(Rflu(itheta)-Rmag, ...
+            Zflu(itheta)-Zmag);
     end
     
     %% Compute dpsi_dr using chain rule
@@ -45,10 +61,52 @@ for itheta=1:ntheta
     dpsi_dr(itheta)=dpsi_dR(itheta)*cos(theta(itheta)) ...
         + dpsi_dZ(itheta)*sin(theta(itheta));
     
+    if plot_verbose
+        figure;
+        plot(Rpsi,psi_iZ,'b-x')
+        myxlim = xlim;
+        myylim = ylim;
+        hold on
+        plot(Rpsi,psi_iZ(iR)+(Rpsi-Rpsi(iR))*dpsi_dR(itheta),'r-')
+        xlim(myxlim)
+        ylim(myylim)
+        xlabel('$R$')
+        ylabel('$\psi$')
+        grid on
+        title(['$\theta = $' num2str(theta(itheta)/pi) '$\pi$, $\Delta\psi/\psi$ = ' ...
+            num2str(abs(psi_on_flxsurf-psi(iR,iZ))/psi_on_flxsurf)])
+        hold on
+        plot(Rpsi(iR),psi(iR,iZ),'ro')
+        hold off
+        
+        figure;
+        plot(Zpsi,psi_iR,'b-x')
+        myxlim = xlim;
+        myylim = ylim;
+        hold on
+        plot(Zpsi,psi_iR(iZ)+(Zpsi-Zpsi(iZ))*dpsi_dZ(itheta),'r-')
+        xlim(myxlim)
+        ylim(myylim)
+        xlabel('$Z$')
+        ylabel('$\psi$')
+        grid on
+        title(['$\theta = $' num2str(theta(itheta)/pi) '$\pi$, $\Delta\psi/\psi$ = ' ...
+            num2str(abs(psi_on_flxsurf-psi(iR,iZ))/psi_on_flxsurf)])
+        hold on
+        plot(Zpsi(iZ),psi(iR,iZ),'ro')
+        hold off
+        
+        fprintf('(R,Z) = (%1.3f,%1.3f)\n',Rpsi(iR),Zpsi(iZ))
+    end
+    
+end
+
+if plot_verbose
+    fprintf('\n\n')
 end
 
 % Perform integral in theta
-int_theta = int_theta + r(1) / (dpsi_dr(1) * Rflu(1)) ...
+int_theta = r(1) / (dpsi_dr(1) * Rflu(1)) ...
         * (theta(2)-theta(1))/2.;
 for itheta=2:ntheta-1
     int_theta = int_theta + ...

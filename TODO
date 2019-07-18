@@ -1,0 +1,6 @@
+-- How is rhopol_chain2 defined ? Is it a linspace(0,1,21) containing sqrt(psipol/psipol_LCFS) ?
+If it contains EQUI.PSIN instead, should we redefine sqrt_psin_chain2 to use the toroidal magnetic flux ?
+
+-- Are temperatures in eV ?
+
+-- Is ION.ANGF in [s^-1] ?

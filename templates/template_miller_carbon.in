@@ -1,0 +1,180 @@
+!-------------------LINEAR CYCLONE ITG CASE-----------------------
+! Widely used benchmark case.  Original study published
+! in Phys. Plasmas Vol. 7, p. 969 (Dimits et al.)
+! Can compare linear.out file with linear.test, which
+! is included in this directory.
+!-----------------------------------------------------------------
+
+&collisions_knobs
+ collision_model='none' ! set to default for full (approximate) operator
+/
+
+! new knobs for nonlinear run
+&hyper_knobs
+ hyper_option = 'visc_only'
+ const_amp = .false.
+ isotropic_shear = .false.
+ D_hypervisc = 0.05
+/
+
+&theta_grid_parameters
+
+ ntheta = 32
+ nperiod = 1
+
+ rhoc = 0.54
+ shat = 0.8
+ qinp = 1.4
+ Rmaj = 3.0
+ R_geo = 3.0
+ shift = 0.0
+ akappa = 1.0
+ akappri = 0.0
+ tri = 0.0
+ tripri = 0.0
+/
+&parameters
+ beta = 0.0
+ zeff = 1.0
+/
+&theta_grid_eik_knobs
+ itor = 1
+ iflux = 0
+ irho = 2
+
+ ppl_eq = F
+ gen_eq = F
+ efit_eq = F
+ local_eq = T
+
+ eqfile = 'dskeq.cdf'
+ equal_arc = T
+ bishop = 4
+ s_hat_input = 0.8
+ beta_prime_input = 0.0
+ delrho = 1.e-3
+ isym = 0
+ writelots = F
+/
+&fields_knobs
+ field_option ='implicit'
+/
+&gs2_diagnostics_knobs
+ print_flux_line = T  ! nonlin
+ write_nl_flux = T    ! nonlin
+ print_line = F       ! linear
+ write_line = F       ! linear
+ write_omega = F
+ write_final_fields = T
+ write_g = F
+! write_phi_over_time = T ! CAREFUL, CAN GIVE HUGE OUTPUT <<< ===========================
+ write_verr = T
+ nwrite = 50
+ navg = 50
+ nsave = 3000
+ omegatinst = 500.0
+ save_for_restart = .true.   ! nonlinear
+ omegatol = -1.0e-3
+/
+&le_grids_knobs
+ ngauss = 5
+ negrid = 12
+ vcut = 2.5
+/
+&dist_fn_knobs
+ adiabatic_option ="iphi00=2"
+ gridfac = 1.0
+ boundary_option = "linked"
+ mach = 0.04
+ g_exb = 0.06
+/
+
+&kt_grids_knobs
+ grid_option = 'box'
+/
+&kt_grids_box_parameters
+ ! naky = (ny-1)/3 + 1
+ ny = 64
+ ! nakx = 2*(nx-1)/3 + 1
+ nx = 192
+ ! ky_min = 1/y0
+ y0 = 20.
+ jtwist = 5
+/
+&init_g_knobs
+ chop_side = F
+ phiinit = 1.e-3
+ restart_file = "nc/nl_mach_0.04_g_exb_0.06.nc"  ! where restart file is kept
+ ginit_option = "noise"
+ clean_init = .true. ! for parallel BC with ginit_option=noise
+/
+&knobs
+ fphi = 1.0
+ fapar = 0.0
+ faperp = 0.0
+ delt = 0.05
+ nstep = 100000
+/
+&species_knobs
+ nspec = 3
+/
+&species_parameters_1
+ z = 1.0
+ mass = 1.0
+ dens = 1.0
+ temp = 1.0
+ tprim = 2.3
+ fprim = 0.733
+ uprim = 0.0
+ vnewk = 0.0
+ type = 'ion'
+/
+&dist_fn_species_knobs_1
+ fexpr = 0.45
+ bakdif = 0.05
+/
+&species_parameters_2
+ z = -1.0
+ mass = 2.7e-4
+ dens = 1.0
+ temp = 1.0
+ tprim = 2.3
+ fprim = 0.733
+ uprim = 0.0
+ vnewk = 0.0
+ type = 'electron'
+/
+&dist_fn_species_knobs_2
+ fexpr = 0.45
+ bakdif = 0.05
+/
+&species_parameters_3
+ z = 6.0
+ mass = 6.0
+ dens = 1.0
+ temp = 1.0
+ tprim = 2.3
+ fprim = 0.733
+ uprim = 0.0
+ vnewk = 0.0
+ type = 'ion'
+/
+&dist_fn_species_knobs_3
+ fexpr = 0.45
+ bakdif = 0.05
+/
+&theta_grid_knobs
+ equilibrium_option = 'eik'
+/
+&nonlinear_terms_knobs
+ nonlinear_mode = 'on'  ! nonlinear
+ cfl = 0.25
+/
+&reinit_knobs
+ delt_adj = 2.0
+ delt_minimum = 1.e-4
+/
+&layouts_knobs
+ layout = 'lxyes'  ! nonlinear
+ local_field_solve = F
+/
