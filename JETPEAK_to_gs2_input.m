@@ -4,6 +4,9 @@
 %           psinrm_in -- sqrt(psipol/psipol_LCFS) of selected flux surf.
 %           infile_template -- GS2 input file template
 %           new_infile_name -- name of input file to be generated
+%           plot_verbose_main (=0) -- create plots to check params & fits
+%           plot_verbose_Ipsi_integration (=0)
+%                      -- create plots to check fits in I(psi) integration
 %
 % Output:   -
 %
@@ -13,16 +16,16 @@
 % All quantities are in SI units,
 % except for temperatures which are in eV.
 %
-% Plots can be generated to visually check parameters and fits:
-% below, set plot_verbose_main = 1,
-% and/or plot_verbose_Ipsi_integration = 0
-%
-function JETPEAK_to_gs2_input(ijp,psinrm_in,infile_template,new_infile_name)
+function JETPEAK_to_gs2_input(ijp,psinrm_in,infile_template,new_infile_name, ...
+    plot_verbose_main, plot_verbose_Ipsi_integration)
 
 % Set this to 1 to check fits of plasma parameters
-plot_verbose_main = 0;
+if nargin < 6
+    plot_verbose_main = 0;
 % Set this to 1 to check fits in computation of I(psi)
-plot_verbose_Ipsi_integration = 0;
+elseif nargin < 7
+    plot_verbose_Ipsi_integration = 0;
+end
 
 % loading databases
 load databases/JETPEAK_2017_04_1661torq.mat
