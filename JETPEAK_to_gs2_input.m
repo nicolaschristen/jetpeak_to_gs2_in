@@ -23,12 +23,13 @@
 function JETPEAK_to_gs2_input(ijp,psinrm_in,infile_template,new_infile_name, ...
     plot_verbose_main, plot_verbose_Ipsi_integration)
 
-% Set this to 1 to check fits of plasma parameters
 if nargin < 6
-    plot_verbose_main = 0;
-% Set this to 1 to check fits in computation of I(psi)
-elseif nargin < 7
+    % Set this to 1 to check fits in computation of I(psi)
     plot_verbose_Ipsi_integration = 0;
+    if nargin < 5
+        % Set this to 1 to check fits of plasma parameters
+        plot_verbose_main = 0;
+    end
 end
 
 % loading databases
