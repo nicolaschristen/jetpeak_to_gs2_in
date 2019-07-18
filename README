@@ -19,7 +19,7 @@ to the user's input), and converted to GS2 parameters.
 Example:
 >> ijp = 1661;
 >> psirnm_in = 0.8;
->> infile_template = 'templates/template_miller.in';
+>> infile_template = 'templates/cbc_lin.in';
 >> new_infile_name = 'my_newfile.in'
 >> JETPEAK_to_gs2_input(ijp,psinrm_in,infile_template,new_infile_name)
 
