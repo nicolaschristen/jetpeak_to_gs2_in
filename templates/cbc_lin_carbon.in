@@ -61,6 +61,7 @@
 /
 &fields_knobs
  field_option = 'implicit'
+ force_maxwell_reinit = .false.
 /
 &gs2_diagnostics_knobs
  print_flux_line = F  ! NL
@@ -106,6 +107,7 @@
  ! ky_min = 1/y0
  y0 = 2.0
  jtwist = 50
+ mixed_flowshear = .true.
 /
 !&kt_grids_range_parameters
 ! ntheta0 = 1 ! number of kx
@@ -120,6 +122,7 @@
  phiinit = 1.e-3  ! init amplitude of phi
  restart_file = "nc/mach_0.04_g_exb_0.06_long.nc"  ! if you have save_for_restart = .true.
  ginit_option = "noise"
+ clean_init = .true.
 /
 &knobs
  fphi = 1.0  ! evolve phi

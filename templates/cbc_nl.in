@@ -58,6 +58,7 @@
 /
 &fields_knobs
  field_option ='implicit'
+ force_maxwell_reinit = .false.
 /
 &gs2_diagnostics_knobs
  print_flux_line = T  ! nonlin
@@ -100,6 +101,7 @@
  ! ky_min = 1/y0
  y0 = 20.
  jtwist = 5
+ mixed_flowshear = .true.
 /
 &init_g_knobs
  chop_side = F
