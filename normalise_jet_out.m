@@ -41,7 +41,7 @@ gs2_in.beta=nref*e*tref/(Bref^2/(2.*mu0));
 gs2_in.zeff=jet_out.Zeff;
 
 % theta_grid_eik_knobs
-gs2_in.beta_prime_input=gs2_in.beta/jet_out.p*a*jet_out.dp_drho;
+gs2_in.beta_prime_input=gs2_in.beta/(nref*e*tref)*a*jet_out.dp_drho;
 
 % dist_fn_knobs
 gs2_in.mach=jet_out.omega*a/vtref;

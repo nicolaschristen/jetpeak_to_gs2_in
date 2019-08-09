@@ -160,7 +160,7 @@ if add_carbon
 end
 dp_drho=interpol(rpsi_TRANSP,p,rpsi_TRANSP,1);
 
-% Tor. angular vel. [s^{-1}]
+% Tor. angular vel. [radian/s]
 omega = interpol(sqrt_psin_chain2,ION.ANGF(ijp,:),sqrt_psin_TRANSP);
 domega_drho = interpol(rpsi_TRANSP,omega,rpsi_TRANSP,1);
 % see notes about signs

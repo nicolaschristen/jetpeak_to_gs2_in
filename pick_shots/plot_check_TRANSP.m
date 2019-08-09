@@ -53,6 +53,13 @@ TPSI_flu_thet = zeros(nflxsurf,ntheta);
 for iflx=1:nflxsurf
     TPSI_flu_thet(iflx,:) = TPSI_flu(iflx);
 end
+% Toroidal mag flux
+TPSItor_flu=permute(TRANSP.T.TRFLX,[2 1]); % on flux surface grid
+TPSItor_flu=TPSItor_flu(:,itransp); % psiflu(iflxsurf)
+TPSItor_flu_thet = zeros(nflxsurf,ntheta);
+for iflx=1:nflxsurf
+    TPSItor_flu_thet(iflx,:) = TPSItor_flu(iflx);
+end
 
 % interpolate q-profile from EFIT to TRANSP radial coord.
 EQ=interpol(EFIT.RMJO(ijp,:),EFIT.Q(ijp,:),TRANSP.G.RMAJM(itransp,nflxsurf+2:end));
@@ -117,7 +124,7 @@ ylim(gca,[0,yl(2)]);
 xlabel('$\sqrt{\psi/\psi_{LCFS}}$','Interpreter','LaTex')
 ylabel('$q$','Interpreter','LaTex')
 legend('EFIT','TRANSP')
-% Compare psi
+% Compare flux surface shape
 figure
 contourf(TR_flu,TZ_flu,TPSI_flu_thet)
 hold on
@@ -132,6 +139,22 @@ contour(EFIT.PSIR,EFIT.PSIZ,EPSI,'LineColor','r','LineWidth',2)
 colorbar
 caxis([min(min(TPSI_rect)) max(max(TPSI_rect))])
 title('$\psi$ from TRANSP rectangular grid, red is EFIT')
+% Compare toroidal magnetic flux
+figure('Position',[10,10,1500,600])
+subplot(1,2,1)
+contourf(TR_flu,TZ_flu,TPSI_flu_thet)
+myxlim = xlim();
+myylim = ylim();
+colorbar
+mycaxis = caxis;
+title('Tor mag flux from TRANSP')
+subplot(1,2,2)
+contourf(EFIT.PSIR,EFIT.PSIZ,EPSI/6)
+xlim(myxlim)
+ylim(myylim)
+colorbar
+caxis(mycaxis)
+title('Tor mag flux from EFIT')
 
 % Plot gradient length of Te, should get : rise-plateau-rise-fall
 dTe_drho=interpol(rho_chain2,EL.TE(ijp,:),rho_chain2,1);
