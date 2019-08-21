@@ -53,6 +53,7 @@ gs2_in.tprim1=-1.*a/jet_out.ti*jet_out.dti_drho;
 gs2_in.fprim1=-1.*a/jet_out.ni*jet_out.dni_drho;
 gs2_in.dens1=jet_out.ni/nref;
 gs2_in.temp1=jet_out.ti/tref;
+gs2_in.vnewk1=jet_out.nu_ii*a/vtref;
 
 % Electrons
 % species_parameters_2
@@ -60,6 +61,7 @@ gs2_in.tprim2=-1.*a/jet_out.te*jet_out.dte_drho;
 gs2_in.fprim2=-1.*a/jet_out.ne*jet_out.dne_drho;
 gs2_in.dens2=jet_out.ne/nref;
 gs2_in.temp2=jet_out.te/tref;
+gs2_in.vnewk2=jet_out.nu_ee*a/vtref;
 
 % Carbon
 % species_parameters_3
@@ -68,6 +70,7 @@ if add_carbon
     gs2_in.fprim3=-1.*a/jet_out.nc*jet_out.dnc_drho;
     gs2_in.dens3=jet_out.nc/nref;
     gs2_in.temp3=jet_out.tc/tref;
+    gs2_in.vnewk3=jet_out.nu_cc*a/vtref;
 end
 
 end

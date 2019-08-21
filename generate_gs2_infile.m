@@ -29,6 +29,7 @@ ispecies.tprim=1;
 ispecies.fprim=1;
 ispecies.dens=1;
 ispecies.temp=1;
+ispecies.vnewk=1;
 fprintf(['In the template input file, parameters need to be specified \n', ...
     'in the following format (including spaces) :\n', ...
     'name = val\n\n'])
@@ -131,6 +132,17 @@ for iline=1:nline
                     val=gs2_in.dens3;
             end
             ispecies.dens=ispecies.dens+1;
+            found=1;
+        case 'vnewk'
+            switch ispecies.vnewk
+                case 1
+                    val=gs2_in.vnewk1;
+                case 2
+                    val=gs2_in.vnewk2;
+                case 3
+                    val=gs2_in.vnewk3;
+            end
+            ispecies.vnewk=ispecies.vnewk+1;
             found=1;
     end
     catch ME

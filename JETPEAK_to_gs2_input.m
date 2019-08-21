@@ -44,8 +44,11 @@ warning('off','MATLAB:chckxy:IgnoreNaN');
 % TRANSP index corresponding to ijp
 itransp=find(TRANSP.JPI==ijp);
 
-% Elementary charge
-e=1.602e-19;
+% Physical constants
+e = 1.602e-19; % elementary charge
+eps0 = 8.8541878128e-12; % vacuum permittivity
+mp = 1.673e-27; % proton mass
+me = 9.109e-31; % electron mass
 
 % Assume Deuterium plasma with Carbon impurity
 Zmain=1.;
@@ -160,6 +163,21 @@ if add_carbon
 end
 dp_drho=interpol(rpsi_TRANSP,p,rpsi_TRANSP,1);
 
+% Collisionality (See notes) [s^{-1}]
+colfac = e^(-3/2)/(4*pi*eps0)^2; % conversion factor from cgs to SI+eV
+Zi = 1; % main ion is deuterium
+Ze = -1;
+mi = 2*mp; % main ion is deuterium
+loglamda = coulomb_log(Zi,mi,ne,ni,te,ti);
+nu_ii = colfac * 4*pi*Zi^4*e^4*ni.*loglamda./(sqrt(mi)*(2*ti).^(3/2));
+nu_ee = colfac * 4*pi*Ze^4*e^4*ne.*loglamda./(sqrt(me)*(2*te).^(3/2));
+if add_carbon
+    Zc = 6;
+    mc = 12*mp;
+    loglamda_c = coulomb_log(Zc,mc,ne,nc,te,tc);
+    nu_cc = colfac * 4*pi*Zc^4*e^4*nc.*loglamda_c./(sqrt(mc)*(2*tc).^(3/2));
+end
+
 % Tor. angular vel. [radian/s]
 omega = interpol(sqrt_psin_chain2,ION.ANGF(ijp,:),sqrt_psin_TRANSP);
 domega_drho = interpol(rpsi_TRANSP,omega,rpsi_TRANSP,1);
@@ -227,6 +245,11 @@ if add_carbon
 end
 jet_out.p=p(iflxsurf);
 jet_out.dp_drho=dp_drho(iflxsurf);
+jet_out.nu_ii=nu_ii(iflxsurf);
+jet_out.nu_ee=nu_ee(iflxsurf);
+if add_carbon
+    jet_out.nu_cc=nu_cc(iflxsurf);
+end
 jet_out.omega=omega(iflxsurf);
 jet_out.domega_drho=domega_drho(iflxsurf);
 jet_out.Zeff=Zeff(iflxsurf);
@@ -470,6 +493,20 @@ if plot_verbose_main
     hold on
     plot(rpsi_TRANSP(iflxsurf),p(iflxsurf),'ro')
     hold off
+    
+    % Collisionality
+    figure;
+    plot(sqrt_psin_TRANSP,loglamda,'r-')
+    xlabel('$\sqrt{\psi/\psi_{LCFS}}$','Interpreter','LaTex')
+    ylabel('$\lambda_{ei}$','Interpreter','LaTex')
+    figure;
+    plot(sqrt_psin_TRANSP,nu_ii,'r-')
+    xlabel('$\sqrt{\psi/\psi_{LCFS}}$','Interpreter','LaTex')
+    ylabel('$\nu_{ii}$','Interpreter','LaTex')
+    figure;
+    plot(sqrt_psin_TRANSP,nu_ee,'r-')
+    xlabel('$\sqrt{\psi/\psi_{LCFS}}$','Interpreter','LaTex')
+    ylabel('$\nu_{ee}$','Interpreter','LaTex')
     
     % Toroidal angular velocity
     % First check interpolation to TRANSP grid
