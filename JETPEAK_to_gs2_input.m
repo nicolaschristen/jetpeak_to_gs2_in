@@ -96,7 +96,7 @@ for indx=1:nflxsurf
     Rmaj(indx)=TRANSP.G.RMAJM(itransp,nflxsurf+1+indx)-rpsi_TRANSP(indx);
 end
 % Free choice for Rgeo. This then defines Bref., see notes about signs
-Rgeo=sign_Rgeo*abs(Rmaj(iflxsurf));
+Rgeo=sign_Rgeo*abs(Rmaj);
 dR_drho=interpol(rpsi_TRANSP,Rmaj,rpsi_TRANSP,1);
 
 % Vertical coord. [m]
@@ -199,14 +199,33 @@ end
 %% Calculate I(psi) to determine Bref for given Rgeo
 % where I(psi) comes from expressing B as B = I*grad(zeta) + grad(zeta) x grad(psi)
 
-Rflu_loc=permute(Rflu,[2 1]); 
-Rflu_loc=Rflu_loc(:,iflxsurf); % Rflu for all poloidal locations on chosen flux surf
-Zflu_loc=permute(Zflu,[2 1]);
-Zflu_loc=Zflu_loc(:,iflxsurf); % Zflu for all poloidal locations on chosen flux surf
-I = compute_I(Rmag,Zmag,Rflu_loc,Zflu_loc,Rpsi,Zpsi,psi,q(iflxsurf), ...
-    psiflu(iflxsurf), plot_verbose_Ipsi_integration);
+I = zeros(1,nflxsurf);
+
+for idx = 1:nflxsurf
+    
+    if idx == iflxsurf
+        plot_verbose_Ipsi_integration_loc = plot_verbose_Ipsi_integration;
+    else
+        plot_verbose_Ipsi_integration_loc = 0;
+    end
+    
+    Rflu_loc=permute(Rflu,[2 1]);
+    Rflu_loc=Rflu_loc(:,idx); % Rflu for all poloidal locations on chosen flux surf
+    Zflu_loc=permute(Zflu,[2 1]);
+    Zflu_loc=Zflu_loc(:,idx); % Zflu for all poloidal locations on chosen flux surf
+    
+    try
+        I(idx) = compute_I(Rmag,Zmag,Rflu_loc,Zflu_loc,Rpsi,Zpsi,psi,q(idx), ...
+            psiflu(idx), plot_verbose_Ipsi_integration_loc);
+    catch err
+        I(idx) = NaN;
+        sprintf('Cannot compute I(psi) for flux surface index %d\nError message: %s\nSkipping it.\n\n',idx,err.identifier)
+    end
+    
+end
+
 % In GS2, Bref is defined via Bref=I/(Rgeo*a)
-Bref=abs(I/Rgeo); % no 1/a since Rgeo not normalised yet, see notes about signs
+Bref=abs(I./Rgeo); % no 1/a since Rgeo not normalised yet, see notes about signs
 
 
 %% Collect into jet_out structure
@@ -215,10 +234,10 @@ jet_out.a=a;
 jet_out.nref=ni(iflxsurf); % reference dens. and temp. from ions
 jet_out.tref=ti(iflxsurf);
 jet_out.mref=1.675e-27+1.6726e-27; % assume main ion is deuterium
-jet_out.Bref=Bref;
+jet_out.Bref=Bref(iflxsurf);
 
 jet_out.Rmaj=Rmaj(iflxsurf);
-jet_out.Rgeo=Rgeo;
+jet_out.Rgeo=Rgeo(iflxsurf);
 jet_out.rho=rpsi_TRANSP(iflxsurf);
 jet_out.dR_drho=dR_drho(iflxsurf);
 jet_out.q=q(iflxsurf);
