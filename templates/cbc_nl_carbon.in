@@ -61,6 +61,7 @@
  force_maxwell_reinit = .false.
 /
 &gs2_diagnostics_knobs
+ write_fluxes = .true.
  print_flux_line = T  ! nonlin
  write_nl_flux = T    ! nonlin
  print_line = F       ! linear
