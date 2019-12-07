@@ -1,48 +1,36 @@
-%% Generate GS2 input files from combined JETPEAK and TRANSP databases
+%% Read plasma parameters and geometry from JETPEAK, TRANSP and ASCOT databases
 %
 % Input :   ijp -- shot index in JETPEAK DB
-%           psinrm_in -- sqrt(psipol/psipol_LCFS) of selected flux surf.
-%           infile_template -- GS2 input file template
-%           new_infile_name -- name of input file to be generated
-%           plot_verbose_main (=0) -- create plots to check params & fits
-%           plot_verbose_Ipsi_integration (=0)
-%                      -- create plots to check fits in I(psi) integration
+%           skip_I (=0) -- when set to 1, skips computation of I(psi)
+%           check_iFlxSurf (=[]) -- list of flux srufaces to plot if visual
+%                                  check is needed
 %
-% Output:   -
+% Output:   jData -- structure with dimensionful extracted data
 %
-% Plasma parameters are evaluated at the flux surface
-% nearest to psinrm_in (no interpolation).
-%
-% All quantities are in SI units,
+% All dimensionful quantities are in SI units,
 % except for temperatures which are in eV.
 %
-% Plots can be generated to visually check parameters and fits:
-% below, set plot_verbose_main = 1,
-% and/or plot_verbose_Ipsi_integration = 0
-%
-function JETPEAK_to_gs2_input(ijp,psinrm_in,infile_template,new_infile_name, ...
-    plot_verbose_main, plot_verbose_Ipsi_integration)
+function jData = read_jData(ijp, skip_I, check_iFlxSurf)
 
-if nargin < 6
-    % Set this to 1 to check fits in computation of I(psi)
-    plot_verbose_Ipsi_integration = 0;
-    if nargin < 5
-        % Set this to 1 to check fits of plasma parameters
-        plot_verbose_main = 0;
-    end
+if nargin < 2
+    skip_I = 0;
+end
+if nargin < 3
+    check_iFlxSurf = [];
 end
 
 % loading databases
-load databases/JETPEAK_2017_04_1661torq.mat
-load databases/TRANSP_2017_3.mat
-
-fprintf('\nOnly have NB torque deposition for ijp=1661. \n\n')
+load ~/codes/jetpeak_and_gs2/databases/JETPEAK_2017_04_1661torq.mat
+load ~/codes/jetpeak_and_gs2/databases/TRANSP_2017_3.mat
 
 % Ignore NaN warnings
 warning('off','MATLAB:chckxy:IgnoreNaN');
 
 % TRANSP index corresponding to ijp
 itransp=find(TRANSP.JPI==ijp);
+
+% JET shot number corresponding to ijp
+shot = SAMPLE.SHOT(ijp);
 
 % Physical constants
 e = 1.602e-19; % elementary charge
@@ -70,10 +58,8 @@ sign_Rgeo = sign_q;
 psi=permute(TRANSP.T.PSI,[3 2 1]); % on rectangular grid
 psi=psi(:,:,itransp); % psi(iR,iZ)
 psiflu=permute(TRANSP.T.PLFLX,[2 1]); % on flux surface grid
-psiflu=psiflu(:,itransp); % psiflu(iflxsurf)
+psiflu=psiflu(:,itransp); 
 nflxsurf=numel(psiflu); % number of flux surf.
-% flux-grid point closest to user specified radial location
-[~,iflxsurf]=min(abs(psiflu-psinrm_in^2*psiflu(end)));
 
 % Normalized sqrt(psi) []
 sqrt_psin_TRANSP=zeros(1,nflxsurf);
@@ -87,7 +73,7 @@ Rflu=1.e-2*permute(TRANSP.T.RFLU,[2 3 1]); % flux surface grid
 Rflu=Rflu(:,:,itransp); % (iflx,itheta)
 Rpsi= 1.e-2*TRANSP.T.PSIR; % rectangular grid
 a=(TRANSP.G.RMAJM(itransp,end)-TRANSP.G.RMAJM(itransp,1))/2.; % GS2 Lref
-rpsi_TRANSP=zeros(1,nflxsurf); % GS2 definition of rho for irho=2, not yet normalized
+rpsi_TRANSP=zeros(1,nflxsurf); % GS2 definition of rpsi for irho=2, not yet normalized
 Rmaj=zeros(1,nflxsurf); % Rmaj definition for iflux ~= 1, not yet normalized
 for indx=1:nflxsurf
     rpsi_TRANSP(indx)= ...
@@ -97,7 +83,7 @@ for indx=1:nflxsurf
 end
 % Free choice for Rgeo. This then defines Bref., see notes about signs
 Rgeo=sign_Rgeo*abs(Rmaj);
-dR_drho=interpol(rpsi_TRANSP,Rmaj,rpsi_TRANSP,1);
+dR_drpsi=interpol(rpsi_TRANSP,Rmaj,rpsi_TRANSP,1);
 
 % Vertical coord. [m]
 Zmag=1.e-2*TRANSP.T.YAXIS(itransp);
@@ -108,12 +94,12 @@ Zpsi= 1.e-2*TRANSP.T.PSIZ;
 % Elongation []
 kappa=permute(TRANSP.T.ELONG,[2 1]);
 kappa=kappa(:,itransp);
-dkappa_drho=interpol(rpsi_TRANSP,kappa,rpsi_TRANSP,1);
+dkappa_drpsi=interpol(rpsi_TRANSP,kappa,rpsi_TRANSP,1);
 
 % Triangularity []
 delta=permute(TRANSP.T.TRIANG,[2 1]);
 delta=asin(delta(:,itransp));
-ddelta_drho=interpol(rpsi_TRANSP,delta,rpsi_TRANSP,1);
+ddelta_drpsi=interpol(rpsi_TRANSP,delta,rpsi_TRANSP,1);
 
 
 %% Extract q and plasma profiles from EFIT, EL and ION
@@ -124,44 +110,42 @@ sqrt_psin_chain2=linspace(0.,1.,21);
 % Safety factor []
 q = sign_q * interpol(EFIT.RMJO(ijp,:), ...
     abs(EFIT.Q(ijp,:)),TRANSP.G.RMAJM(itransp,nflxsurf+2:end));
-dq_drho=interpol(rpsi_TRANSP,q,rpsi_TRANSP,1);
+dq_drpsi=interpol(rpsi_TRANSP,q,rpsi_TRANSP,1);
+shat = rpsi_TRANSP./q .* dq_drpsi;
 
 % Density [m^{-3}]
 ni=EL.NE(ijp,:)-6.0*ION.NC(ijp,:);
 ni=interpol(sqrt_psin_chain2,ni,sqrt_psin_TRANSP);
 nc=interpol(sqrt_psin_chain2,ION.NC(ijp,:),sqrt_psin_TRANSP);
 ne=interpol(sqrt_psin_chain2,EL.NE(ijp,:),sqrt_psin_TRANSP);
-fprintf('Should Carbon be included ? nc/ni = %1.4f\n',nc(iflxsurf)/ni(iflxsurf))
-if nc(iflxsurf)/ni(iflxsurf) >= 0.05
-    fprintf('\tnc/ni >= 0.05: including carbon.\n\n')
-    add_carbon = 1;
-else
-    fprintf('\tnc/ni < 0.05: not including carbon.\n')
-    fprintf('\tni is adapted so that QN holds.\n\n')
-    add_carbon = 0;
-    ni = ni + Zimp/Zmain*nc;
+% Should carbon be included?
+add_carbon = zeros(nflxsurf,1);
+for iFlxSurf = 1:nflxsurf
+    if nc(iFlxSurf)/ni(iFlxSurf) >= 0.05
+        % yes
+        add_carbon(iFlxSurf) = 1;
+    else
+        % if not, then adapt ni so that QN holds
+        add_carbon(iFlxSurf) = 0;
+        ni(iFlxSurf) = ni(iFlxSurf) + Zimp/Zmain*nc(iFlxSurf);
+    end
 end
-dni_drho=interpol(rpsi_TRANSP,ni,rpsi_TRANSP,1);
-dne_drho=interpol(rpsi_TRANSP,ne,rpsi_TRANSP,1);
-dnc_drho=interpol(rpsi_TRANSP,nc,rpsi_TRANSP,1);
+dni_drpsi=interpol(rpsi_TRANSP,ni,rpsi_TRANSP,1);
+dne_drpsi=interpol(rpsi_TRANSP,ne,rpsi_TRANSP,1);
+dnc_drpsi=interpol(rpsi_TRANSP,nc,rpsi_TRANSP,1);
 
 % Temperature [eV]
 ti=interpol(sqrt_psin_chain2,ION.TI(ijp,:),sqrt_psin_TRANSP);
-dti_drho=interpol(rpsi_TRANSP,ti,rpsi_TRANSP,1);
+dti_drpsi=interpol(rpsi_TRANSP,ti,rpsi_TRANSP,1);
 te=interpol(sqrt_psin_chain2,EL.TE(ijp,:),sqrt_psin_TRANSP);
-dte_drho=interpol(rpsi_TRANSP,te,rpsi_TRANSP,1);
-if add_carbon
-    fprintf('T_C is set to T_i since there are no direct measurements.\n\n')
-    tc=ti; % no direct measurement for T_imp
-    dtc_drho=dti_drho;
-end
+dte_drpsi=interpol(rpsi_TRANSP,te,rpsi_TRANSP,1);
+tc=ti; % no direct measurement for T_imp
+dtc_drpsi=dti_drpsi;
 
 % Plasma pressure [Pa]
 p=e*ni.*ti+e*ne.*te;
-if add_carbon
-    p = p+e*nc.*tc;
-end
-dp_drho=interpol(rpsi_TRANSP,p,rpsi_TRANSP,1);
+p(add_carbon==1) = p(add_carbon==1)+e*nc(add_carbon==1).*tc(add_carbon==1);
+dp_drpsi=interpol(rpsi_TRANSP,p,rpsi_TRANSP,1);
 
 % Collisionality (See notes) [s^{-1}]
 colfac = e^(-3/2)/(4*pi*eps0)^2; % conversion factor from cgs to SI+eV
@@ -171,28 +155,29 @@ mi = 2*mp; % main ion is deuterium
 loglamda = coulomb_log(Zi,mi,ne,ni,te,ti);
 nu_ii = colfac * 4*pi*Zi^4*e^4*ni.*loglamda./(sqrt(mi)*(2*ti).^(3/2));
 nu_ee = colfac * 4*pi*Ze^4*e^4*ne.*loglamda./(sqrt(me)*(2*te).^(3/2));
-if add_carbon
-    Zc = 6;
-    mc = 12*mp;
-    loglamda_c = coulomb_log(Zc,mc,ne,nc,te,tc);
-    nu_cc = colfac * 4*pi*Zc^4*e^4*nc.*loglamda_c./(sqrt(mc)*(2*tc).^(3/2));
-end
+Zc = 6;
+mc = 12*mp;
+loglamda_c = coulomb_log(Zc,mc,ne,nc,te,tc);
+nu_cc = colfac * 4*pi*Zc^4*e^4*nc.*loglamda_c./(sqrt(mc)*(2*tc).^(3/2));
 
 % Tor. angular vel. [radian/s]
 omega = interpol(sqrt_psin_chain2,ION.ANGF(ijp,:),sqrt_psin_TRANSP);
-domega_drho = interpol(rpsi_TRANSP,omega,rpsi_TRANSP,1);
+domega_drpsi = interpol(rpsi_TRANSP,omega,rpsi_TRANSP,1);
 % see notes about signs
-sign_mach = sign(omega(iflxsurf))*sign(BASIC.IP(ijp));
+sign_mach = sign(omega)*sign(BASIC.IP(ijp));
 % see notes about signs
-sign_domega_drho = sign(domega_drho(iflxsurf))*sign(BASIC.IP(ijp));
-omega = sign_mach*abs(omega);
-domega_drho = sign_domega_drho*abs(domega_drho);
+sign_domega_drpsi = sign(domega_drpsi)*sign(BASIC.IP(ijp));
+omega = sign_mach.*abs(omega);
+domega_drpsi = sign_domega_drpsi.*abs(domega_drpsi);
 
 % Effective charge [C]
-if add_carbon
-   Zeff = (Zmain^2*ni+Zimp^2*nc)./(Zmain*ni+Zimp*nc);
-else
-   Zeff = Zmain*ones(nflxsurf,1);
+Zeff = zeros(nflxsurf,1);
+for iFlxSurf = 1:nflxsurf
+    if add_carbon(iFlxSurf)
+       Zeff(iFlxSurf) = (Zmain^2*ni(iFlxSurf)+Zimp^2*nc(iFlxSurf))./(Zmain*ni(iFlxSurf)+Zimp*nc(iFlxSurf));
+    else
+       Zeff(iFlxSurf) = Zmain;
+    end
 end
 
 
@@ -201,105 +186,102 @@ end
 
 I = zeros(1,nflxsurf);
 
-for idx = 1:nflxsurf
-    
-    if idx == iflxsurf
-        plot_verbose_Ipsi_integration_loc = plot_verbose_Ipsi_integration;
-    else
-        plot_verbose_Ipsi_integration_loc = 0;
-    end
-    
-    Rflu_loc=permute(Rflu,[2 1]);
-    Rflu_loc=Rflu_loc(:,idx); % Rflu for all poloidal locations on chosen flux surf
-    Zflu_loc=permute(Zflu,[2 1]);
-    Zflu_loc=Zflu_loc(:,idx); % Zflu for all poloidal locations on chosen flux surf
-    
-    try
-        I(idx) = compute_I(Rmag,Zmag,Rflu_loc,Zflu_loc,Rpsi,Zpsi,psi,q(idx), ...
-            psiflu(idx), plot_verbose_Ipsi_integration_loc);
-    catch err
-        I(idx) = NaN;
-        sprintf('Cannot compute I(psi) for flux surface index %d\nError message: %s\nSkipping it.\n\n',idx,err.identifier)
-    end
-    
+if ~skip_I
+
+    for iFlxSurf = 1:nflxsurf
+        
+        if ismember(iFlxSurf, check_iFlxSurf)
+            plot_verbose_Ipsi_integration_loc = plot_verbose_Ipsi_integration;
+        else
+            plot_verbose_Ipsi_integration_loc = 0;
+        end
+        
+        Rflu_loc=permute(Rflu,[2 1]);
+        Rflu_loc=Rflu_loc(:,iFlxSurf); % Rflu for all poloidal locations on chosen flux surf
+        Zflu_loc=permute(Zflu,[2 1]);
+        Zflu_loc=Zflu_loc(:,iFlxSurf); % Zflu for all poloidal locations on chosen flux surf
+        
+        try
+            I(iFlxSurf) = compute_I(Rmag,Zmag,Rflu_loc,Zflu_loc,Rpsi,Zpsi,psi,q(iFlxSurf), ...
+                psiflu(iFlxSurf), plot_verbose_Ipsi_integration_loc);
+        catch err
+            I(iFlxSurf) = NaN;
+            sprintf('Cannot compute I(psi) for flux surface index %d\nError message: %s\nSkipping it.\n\n',iFlxSurf,err.identifier)
+        end
+        
+    end % loop over flux surfaces
+
 end
 
 % In GS2, Bref is defined via Bref=I/(Rgeo*a)
 Bref=abs(I./Rgeo); % no 1/a since Rgeo not normalised yet, see notes about signs
 
 
-%% Collect into jet_out structure
+%% Collect into jData structure
 
-jet_out.a=a;
-jet_out.nref=ni(iflxsurf); % reference dens. and temp. from ions
-jet_out.tref=ti(iflxsurf);
-jet_out.mref=1.675e-27+1.6726e-27; % assume main ion is deuterium
-jet_out.Bref=Bref(iflxsurf);
+jData.a=a;
+jData.nref=ni;
+jData.tref=ti;
+jData.mref=1.675e-27+1.6726e-27; % assume main ion is deuterium
+jData.Bref=Bref;
+jData.vthref=sqrt(2.0*e*jData.tref/jData.mref);
+jData.rhoref=sqrt(2.0*jData.mref*e*jData.tref)./(e*Bref);
+jData.rhostar=jData.rhoref/a;
 
-jet_out.Rmaj=Rmaj(iflxsurf);
-jet_out.Rgeo=Rgeo(iflxsurf);
-jet_out.rho=rpsi_TRANSP(iflxsurf);
-jet_out.dR_drho=dR_drho(iflxsurf);
-jet_out.q=q(iflxsurf);
-jet_out.dq_drho=dq_drho(iflxsurf);
-jet_out.kappa=kappa(iflxsurf);
-jet_out.dkappa_drho=dkappa_drho(iflxsurf);
-jet_out.delta=delta(iflxsurf);
-jet_out.ddelta_drho=ddelta_drho(iflxsurf);
-jet_out.ni=ni(iflxsurf);
-jet_out.dni_drho=dni_drho(iflxsurf);
-jet_out.ne=ne(iflxsurf);
-jet_out.dne_drho=dne_drho(iflxsurf);
-if add_carbon
-    jet_out.nc=nc(iflxsurf);
-    jet_out.dnc_drho=dnc_drho(iflxsurf);
-end
-jet_out.ti=ti(iflxsurf);
-jet_out.dti_drho=dti_drho(iflxsurf);
-jet_out.te=te(iflxsurf);
-jet_out.dte_drho=dte_drho(iflxsurf);
-if add_carbon
-    jet_out.tc=tc(iflxsurf);
-    jet_out.dtc_drho=dtc_drho(iflxsurf);
-end
-jet_out.p=p(iflxsurf);
-jet_out.dp_drho=dp_drho(iflxsurf);
-jet_out.nu_ii=nu_ii(iflxsurf);
-jet_out.nu_ee=nu_ee(iflxsurf);
-if add_carbon
-    jet_out.nu_cc=nu_cc(iflxsurf);
-end
-jet_out.omega=omega(iflxsurf);
-jet_out.domega_drho=domega_drho(iflxsurf);
-jet_out.Zeff=Zeff(iflxsurf);
-
-
-%% GS2-normalisation
-
-gs2_in=normalise_jet_out(jet_out, add_carbon);
-
-
-%% Generate input file
-
-generate_gs2_infile(gs2_in,infile_template,new_infile_name, add_carbon);
+jData.shot = shot;
+jData.Rmaj=Rmaj;
+jData.Rgeo=Rgeo;
+jData.sqrt_psin_TRANSP=sqrt_psin_TRANSP;
+jData.sqrt_psin_chain2=sqrt_psin_chain2;
+jData.rpsi=rpsi_TRANSP;
+jData.dR_drpsi=dR_drpsi;
+jData.q=q;
+jData.shat=shat;
+jData.kappa=kappa;
+jData.dkappa_drpsi=dkappa_drpsi;
+jData.delta=delta;
+jData.ddelta_drpsi=ddelta_drpsi;
+jData.ni=ni;
+jData.dni_drpsi=dni_drpsi;
+jData.ne=ne;
+jData.dne_drpsi=dne_drpsi;
+jData.add_carbon=add_carbon;
+jData.nc=nc;
+jData.dnc_drpsi=dnc_drpsi;
+jData.ti=ti;
+jData.dti_drpsi=dti_drpsi;
+jData.te=te;
+jData.dte_drpsi=dte_drpsi;
+jData.tc=tc;
+jData.dtc_drpsi=dtc_drpsi;
+jData.p=p;
+jData.dp_drpsi=dp_drpsi;
+jData.nu_ii=nu_ii;
+jData.nu_ee=nu_ee;
+jData.nu_cc=nu_cc;
+jData.omega=omega;
+jData.domega_drpsi=domega_drpsi;
+jData.Zeff=Zeff;
 
 
 %% Check data prof., interpolations, derivatives (if plot_verbose)
 
-if plot_verbose_main
+for iplot = 1:numel(check_iFlxSurf)
+
+    iFlxSurf = check_iFlxSurf(iplot);
     
     % Major radius
     figure;
     plot(rpsi_TRANSP,Rmaj,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        Rmaj(iflxsurf)+ ...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dR_drho(iflxsurf),'r-')
+        Rmaj(iFlxSurf)+ ...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dR_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$R_\psi$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),Rmaj(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),Rmaj(iFlxSurf),'ro')
     hold off
     
     % Elongation
@@ -307,13 +289,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,kappa,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        kappa(iflxsurf)+ ...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dkappa_drho(iflxsurf),'r-')
+        kappa(iFlxSurf)+ ...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dkappa_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$\kappa$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),kappa(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),kappa(iFlxSurf),'ro')
     hold off
     
     % Triangularity
@@ -321,13 +303,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,delta,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        delta(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*ddelta_drho(iflxsurf),'r-')
+        delta(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*ddelta_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$\delta$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),delta(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),delta(iFlxSurf),'ro')
     hold off
     % Check if delta_GS2 = asin(delta_TRANSP)
     figure;
@@ -373,13 +355,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,q,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        q(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dq_drho(iflxsurf),'r-')
+        q(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dq_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$q$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),q(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),q(iFlxSurf),'ro')
     hold off
     
     % Ion density
@@ -396,13 +378,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,ni,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        ni(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dni_drho(iflxsurf),'r-')
+        ni(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dni_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$n_i$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),ni(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),ni(iFlxSurf),'ro')
     hold off
     
     % Electron density
@@ -419,13 +401,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,ne,'b-x')
     hold on
     plot(rpsi_TRANSP, ...
-        ne(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dne_drho(iflxsurf),'r-')
+        ne(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dne_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$n_e$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),ne(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),ne(iFlxSurf),'ro')
     hold off
     
     % Carbon density
@@ -442,13 +424,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,nc,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        nc(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dnc_drho(iflxsurf),'r-')
+        nc(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dnc_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$n_C$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),nc(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),nc(iFlxSurf),'ro')
     hold off
     
     % Ion temperature
@@ -465,13 +447,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,ti,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        ti(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dti_drho(iflxsurf),'r-')
+        ti(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dti_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$T_i$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),ti(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),ti(iFlxSurf),'ro')
     hold off
     
     % Electron temperature
@@ -488,13 +470,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,te,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        te(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dte_drho(iflxsurf),'r-')
+        te(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dte_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$T_e$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),te(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),te(iFlxSurf),'ro')
     hold off
     
     % Carbon temperature: redundant, since T_C = T_i above.
@@ -504,13 +486,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,p,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        p(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*dp_drho(iflxsurf),'r-')
+        p(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*dp_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$p$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),p(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),p(iFlxSurf),'ro')
     hold off
     
     % Collisionality
@@ -542,13 +524,13 @@ if plot_verbose_main
     plot(rpsi_TRANSP,omega,'b-x')
     hold on
     plot(rpsi_TRANSP,...
-        omega(iflxsurf)+...
-           (rpsi_TRANSP-rpsi_TRANSP(iflxsurf))*domega_drho(iflxsurf),'r-')
+        omega(iFlxSurf)+...
+           (rpsi_TRANSP-rpsi_TRANSP(iFlxSurf))*domega_drpsi(iFlxSurf),'r-')
     legend('Experimental data','Tangent at point of interest')
     xlabel('$r_\psi$','Interpreter','LaTex')
     ylabel('$\Omega_\zeta$','Interpreter','LaTex')
     hold on
-    plot(rpsi_TRANSP(iflxsurf),omega(iflxsurf),'ro')
+    plot(rpsi_TRANSP(iFlxSurf),omega(iFlxSurf),'ro')
     hold off
     
 end
