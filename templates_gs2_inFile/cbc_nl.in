@@ -6,7 +6,7 @@
 !-----------------------------------------------------------------
 
 &collisions_knobs
- collision_model='none' ! set to default for full (approximate) operator
+ collision_model='default' ! set to default for full (approximate) operator
 /
 
 ! new knobs for nonlinear run
@@ -77,10 +77,11 @@
  omegatinst = 500.0
  save_for_restart = .true.   ! nonlinear
  omegatol = -1.0e-3
+ save_many = .true.
 /
 &le_grids_knobs
  ngauss = 5
- negrid = 12
+ negrid = 16
  vcut = 2.5
 /
 &dist_fn_knobs
@@ -110,6 +111,7 @@
  restart_file = "nc/nl_mach_0.04_g_exb_0.06.nc"  ! where restart file is kept
  ginit_option = "noise"
  clean_init = .true. ! for parallel BC with ginit_option=noise
+ read_many = .true.
 /
 &knobs
  fphi = 1.0
@@ -117,6 +119,7 @@
  faperp = 0.0
  delt = 0.05
  nstep = 100000
+ avail_cpu_time = 86400 ! 24hrs
 /
 &species_knobs
  nspec = 2
@@ -161,6 +164,7 @@
 &reinit_knobs
  delt_adj = 2.0
  delt_minimum = 1.e-4
+ delt_cushion = 10000
 /
 &layouts_knobs
  layout = 'lxyes'  ! nonlinear

@@ -9,7 +9,7 @@
 %
 % Output:   -
 %
-function create_gs2VarsFile(ijp,rpsi_nrm,template_fName,new_fName)
+function create_gs2_inFile(ijp,rpsi_nrm,template_fName,new_fName)
 
 if ~iscell(new_fName)
     new_fName = {new_fName};

@@ -85,7 +85,7 @@
 ! velocity space grid
 &le_grids_knobs
  ngauss = 5  ! 2*nguass is the number of untrapped pitch angles per sign of vpar
- negrid = 12
+ negrid = 16
  vcut = 2.5  ! max |v| value on the grid
 /
 &dist_fn_knobs
@@ -126,8 +126,8 @@
 /
 &knobs
  fphi = 1.0  ! evolve phi
- fapar = 1.0  ! evolve A_parallel
- fbpar = 1.0   ! evolve B_parallel
+ fapar = 0.0  ! evolve A_parallel
+ fbpar = 0.0   ! evolve B_parallel
  delt = 0.1   ! time step size (normalized by a / v_tref)
  nstep = 1000  ! number of time steps
 /
