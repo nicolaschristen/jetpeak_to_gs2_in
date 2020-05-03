@@ -1,3 +1,25 @@
+%% Reconstruct a rotation profile, given the turbulent fluxes at several
+% raddi, and assuming that the corresponding transport coefficient are
+% only weakly dependent on rotation, rotation shear, temperature and
+% density. The function can be used in two ways:
+%
+%     1. Turbulent fluxes have been computed in simulations, and the
+%        transport coefficients are calculated based on those fluxes.
+%
+%     2. Turbulent fluxes are computed based on user-specified deposition
+%        profiles, and the transport coeffients are from a previous but
+%        similar case where method 1. was used.
+%
+% Input :   ijp --  shot index in JETPEAK DB
+%           fname -- [usage 1] name of csv file containing computed fluxes,
+%                              see example_files/fluxes.csv for format.
+%                    [usage 2] name of csv file containing computed
+%                              transport coefficients, see
+%                              example_files/transpCoeff.csv for format.
+%           depoParams -- [optional] TODO
+%
+% Ouput:    -
+%
 function omega_reconstruct(ijp, fname, varargin)
 
 
@@ -5,6 +27,14 @@ function omega_reconstruct(ijp, fname, varargin)
 options_default = struct( 'use_Pi_over_Q', 0, ...
                           'depoParams', [] );
 opt = get_optargin(options_default, varargin);
+
+% Flag to tell if the deposition profile is from the experiment, or
+% if it is user-specified
+if isempty(opt.depoParams)
+    userDepo = 0;
+else
+    userDepo = 1;
+end
 
 %    ------------    %
 
@@ -14,21 +44,21 @@ jData = read_jData(ijp);
 % Either read the fluxes from simulations,
 % use them to compute the transport coefficients,
 % and save those coefficients to a file.
-if isempty(opt.depoParams)
+if ~userDepo
     [flx, tCoeff] = get_transpCoeff_from_gs2Fluxes(ijp, fname, 'jData', jData);
 % Or compute the fluxes based on user-specified profiles,
 % and read pre-computed transport coefficients from a file.
 else
-    % TODO
+    % TODO: compute the fluxes from user-specified deposition profiles
     flx = 0;
-    tCoeff = readtable('transpCoeff.xls');
+    tCoeff = readtable(fname);
 end
 
 %    ------------    %
 
 % Define an rpsi interval on which to reconstruct omega
-rpsiIn = min(tCoeff.rpsi);
-rpsiOut = max(tCoeff.rpsi);
+rpsiIn = min(tCoeff.rpsi); % innermost point
+rpsiOut = max(tCoeff.rpsi); % outermost point
 % Index in jData corresponding to rpsiOut
 iout_jData = find(abs(rpsiOut-jData.rpsi) == min(abs(rpsiOut-jData.rpsi)));
 nr = 1000;
@@ -37,16 +67,19 @@ recon.rpsi = linspace(rpsiIn,rpsiOut,nr);
 %    ------------    %
 
 % For quantities determined from simulations, use linear interpolation.
-% For user-set or experimental quantities, use splines.
 recon.momPinch = interp1(tCoeff.rpsi,tCoeff.momPinch,recon.rpsi);
 recon.momDif = interp1(tCoeff.rpsi,tCoeff.momDif,recon.rpsi);
-if isempty(opt.depoParams)
+% For user-set or experimental quantities, use splines.
+recon.nref = interpol(jData.rpsi,jData.nref,recon.rpsi);
+recon.Rmaj = interpol(jData.rpsi,jData.Rmaj,recon.rpsi);
+% If fluxes have been computed from simulations, then interpolate linearly
+if ~userDepo
     recon.PI = interp1(flx.rpsi,flx.PI_gs2.*flx.PINorm,recon.rpsi);
+% If fluxes are computed from user-specified deposition profiles,
+% then use splines.
 else
     recon.PI = interpol(flx.rpsi,flx.PI_gs2.*flx.PINorm,recon.rpsi);
 end
-recon.nref = interpol(jData.rpsi,jData.nref,recon.rpsi);
-recon.Rmaj = interpol(jData.rpsi,jData.Rmaj,recon.rpsi);
 
 %    ------------    %
 
@@ -86,7 +119,7 @@ omegaOut = abs(jData.omega(iout_jData));
 
 recon.omega = omegaOut * ones(1,nr) + exp(g).*f;
 
-% Get nearest neighbour on recon grid to rpsi's from the simulations
+% Get nearest neighbour on recon grid to the rpsi grid from the simulations
 nr_tCoeff = numel(tCoeff.rpsi);
 omega = zeros(nr_tCoeff,1);
 for ir = 1:nr_tCoeff
@@ -95,8 +128,8 @@ for ir = 1:nr_tCoeff
     omega(ir) = recon.omega(ir_recon2tCoeff);
 end
 
-% Write transport coefficients to file
-% in same folder as file containing fluxes.
+% Write reconstructed rotation profile to file
+% in same folder as the file specified by fname.
 rpsi = tCoeff.rpsi;
 omRecon = table(rpsi,omega);
 [fpath,~,~] = fileparts(fname);
