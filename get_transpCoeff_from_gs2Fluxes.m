@@ -1,3 +1,18 @@
+%% Compute tansport coefficients, given the turbulent fluxes at several
+% raddi, and assuming that the desired transport coefficient are only
+% weakly dependent on rotation, rotation shear, temperature and
+% density. The transport coefficients are then written to a file.
+%
+% Input :   ijp --  shot index in JETPEAK DB
+%           fname -- name of csv file containing computed fluxes,
+%                    see example_files/fluxes.csv for format. The transport
+%                    coefficients are saved in the same location as fname.
+%           jData -- [optional] data structure obtained from JETPEAK, if
+%                    read_jData has already been called.
+%
+% Ouput:    flx -- table containing fluxes read from fname
+%           tCoeff -- table containing the transport coefficients
+%
 function [flx, tCoeff] = get_transpCoeff_from_gs2Fluxes(ijp, fname, varargin)
 
 
