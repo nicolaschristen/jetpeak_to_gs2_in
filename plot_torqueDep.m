@@ -7,7 +7,7 @@
 %
 % Output:   -
 %
-function plot_torqueDep(ijp)
+function plot_torqueDep(ijp varargin)
 
 
 % Read optional input arguments
@@ -40,7 +40,7 @@ for ishot = 1:numel(ijp)
 
         figure
 
-        h = plot(jData.rpsi/jData.a, S_ASC);
+        h = plot(xvar, S_ASC);
         lgd = {'ASCOT'};
         color = get(h,'Color');
         if ~isnan(S_PEN(1))

@@ -44,7 +44,7 @@ for ishot = 1:numel(ijp)
 
         figure
 
-        h = plot(jData.rpsi/jData.a, Si_ASC);
+        h = plot(xvar, Si_ASC);
         lgd = {'ASCOT'};
         color = get(h,'Color');
         if ~isnan(Si_PEN(1))
@@ -62,7 +62,7 @@ for ishot = 1:numel(ijp)
 
         figure
 
-        h = plot(jData.rpsi/jData.a, Se_ASC);
+        h = plot(xvar, Se_ASC);
         lgd = {'ASCOT'};
         color = get(h,'Color');
         if ~isnan(Se_PEN(1))
