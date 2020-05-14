@@ -92,6 +92,7 @@ Rpsi= 1.e-2*TRANSP.T.PSIR; % rectangular grid
 a=(TRANSP.G.RMAJM(itransp,end)-TRANSP.G.RMAJM(itransp,1))/2.; % GS2 Lref
 rpsi_TRANSP=zeros(1,nflxsurf); % GS2 definition of rpsi for irho=2, not yet normalized
 Rmaj=zeros(1,nflxsurf); % Rmaj definition for iflux ~= 1, not yet normalized
+Rmax = TRANSP.G.RMAJM(itransp,2*nflxsurf+1); % Maximum major radius of confined plasma region
 for indx=1:nflxsurf
     rpsi_TRANSP(indx)= ...
         (TRANSP.G.RMAJM(itransp,nflxsurf+1+indx) ...
@@ -327,7 +328,9 @@ jData.shot = shot;
 jData.ijp = ijp;
 jData.idxQAscot = idxQAscot;
 jData.idxAscot = idxAscot;
+jData.Rmag=Rmag;
 jData.Rmaj=Rmaj;
+jData.Rmax=Rmax;
 jData.Rgeo=Rgeo;
 jData.sqrt_psin_TRANSP=sqrt_psin_TRANSP;
 jData.sqrt_psin_chain2=sqrt_psin_chain2;
