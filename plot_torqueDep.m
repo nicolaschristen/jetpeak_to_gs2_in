@@ -7,7 +7,7 @@
 %
 % Output:   -
 %
-function plot_torqueDep(ijp varargin)
+function plot_torqueDep(ijp, varargin)
 
 
 % Read optional input arguments
