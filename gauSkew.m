@@ -9,7 +9,7 @@
 %
 % Output: ypts -- value of the function at location xpts
 %
-function ypts = gauSkew(r, rmax, width, nrm, skew)
+function ypts = gauSkew(xpts, mpos, width, nrm, skew)
 
 % Normal distribution
 % Probability density function
@@ -21,3 +21,4 @@ ypts =  nrm*2/width * nrmDist.pdf((xpts-mpos)/width) ...
     .* nrmDist.cdf(skew*(xpts-mpos)/width);
 
 end
+
