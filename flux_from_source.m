@@ -3,13 +3,11 @@
 % Input :  psi -- radial profile of poloidal magnetic flux
 %          dV -- radial profile of volume elements:
 %                dV(i) = V(psi(i))-V(psi(i-1))
-%          dx_dpsi -- dx/dpsi conversion factor to
-%                     GS2 radial coordinate
 %          src -- radial profile of the total source term
 %
 % Ouput:  flux -- experimental flux
 %
-function flux = flux_from_source(psi, dV, dx_dpsi, src)
+function flux = flux_from_source(psi, dV, src, varargin)
 
 nFlxSurf = numel(psi);
 
@@ -34,6 +32,6 @@ for iFlxSurf = 2:nFlxSurf
     flux(iFlxSurf) = flux(iFlxSurf-1) + ...
         dpsi * (dV_dpsi(iFlxSurf)*src(iFlxSurf) + dV_dpsi(iFlxSurf)*src(iFlxSurf))/2.0;
 end
-flux = 1./dV_dpsi.*flux.*dx_dpsi;
+flux = 1./dV_dpsi.*flux;
 
 end
