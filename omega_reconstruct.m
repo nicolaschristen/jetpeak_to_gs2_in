@@ -20,6 +20,7 @@
 %                            Else, Pi is used.
 %           depoParams -- [kw, []] if empty, sources from the experiment are used.
 %                         To specify depositions with a skewed gaussian:
+%                             * See set_useDepo.m for more details.
 %                             * store width, nrm, mpos & skew of the fit to
 %                               experimental profiles as fields of depoParams.orig
 %                             * store cP, cl & cE as fields of depoParams.usr
