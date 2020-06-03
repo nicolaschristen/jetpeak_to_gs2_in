@@ -1,23 +1,23 @@
 %% Read plasma parameters and geometry from JETPEAK, TRANSP and ASCOT databases
 %
 % Input :   ijp -- shot index in JETPEAK DB
-%           skip_I (=0) -- when set to 1, skips computation of I(psi)
-%           check_iFlxSurf (=[]) -- list of flux srufaces to plot if visual
-%                                  check is needed
+%           skip_I -- [kw, 1]when set to 1, skips computation of I(psi)
+%           check_iFlxSurf -- [kw, []] list of flux srufaces to plot if visual
+%                             check is needed
+%           showWarnings -- [kw, 0] show warnings when part of the data is
+%                           incomplete
 %
 % Output:   jData -- structure with dimensionful extracted data
 %
 % All dimensionful quantities are in SI units,
 % except for temperatures which are in eV.
 %
-function jData = read_jData(ijp, skip_I, check_iFlxSurf)
+function jData = read_jData(ijp, varargin)
 
-if nargin < 2
-    skip_I = 0;
-end
-if nargin < 3
-    check_iFlxSurf = [];
-end
+opt_defaults = struct( 'skip_I', 0, ...
+                       'check_iFlxSurf', [], ...
+                       'showWarnings', 0 );
+opt = get_optargin(opt_defaults, varargin);
 
 % loading databases
 load ~/codes/jetpeak_v_gs2/databases/TRANSP_2017_3.mat
@@ -56,6 +56,7 @@ sign_bpol = 1; % choice we make, means zeta_gs2 is in Ip direction
 sign_btor = sign(BASIC.BT(ijp)*BASIC.IP(ijp));
 sign_q = sign_bpol*sign_btor;
 sign_Rgeo = sign_q;
+sign_PI_ASCOT_v_GS2 = -1;
 
 
 
@@ -108,6 +109,9 @@ Zmag=1.e-2*TRANSP.T.YAXIS(itransp);
 Zflu=1.e-2*permute(TRANSP.T.ZFLU,[2 3 1]);
 Zflu=Zflu(:,:,itransp); % (iflx,itheta)
 Zpsi= 1.e-2*TRANSP.T.PSIZ;
+
+% Compute <|grad(psi)|>_psi
+gradPsiAvg = compute_gradPsiAvg(Rpsi,Zpsi,psi,Rflu,Zflu,Rmag,Zmag);
 
 % Elongation []
 kappa=permute(TRANSP.T.ELONG,[2 1]);
@@ -210,11 +214,11 @@ end
 
 I = zeros(1,nflxsurf);
 
-if ~skip_I
+if ~opt.skip_I
 
     for iFlxSurf = 1:nflxsurf
         
-        if ismember(iFlxSurf, check_iFlxSurf)
+        if ismember(iFlxSurf, opt.check_iFlxSurf)
             plot_verbose_Ipsi_integration_loc = plot_verbose_Ipsi_integration;
         else
             plot_verbose_Ipsi_integration_loc = 0;
@@ -230,7 +234,9 @@ if ~skip_I
                 psiflu(iFlxSurf), plot_verbose_Ipsi_integration_loc);
         catch err
             I(iFlxSurf) = NaN;
-            fprintf('\nCannot compute I(psi) for flux surface index %d\nError message: %s\nSkipping it.\n\n',iFlxSurf,err.identifier)
+            if opt.showWarnings
+                fprintf('\nCannot compute I(psi) for flux surface index %d\nError message: %s\nSkipping it.\n\n',iFlxSurf,err.identifier)
+            end
         end
         
     end % loop over flux surfaces
@@ -277,10 +283,10 @@ srcE_i_QASCOT = srcE_i_QASCOT - srcE_ie_QASCOT;
 srcE_e_QASCOT = srcE_e_QASCOT + srcE_ie_QASCOT;
 
 % Associated ion and electron heat fluxes (see notes) [kg/(s^3)]
-Qi_PENCIL = flux_from_source(psiflu, dV, dx_dpsi, srcE_i_PENCIL);
-Qe_PENCIL = flux_from_source(psiflu, dV, dx_dpsi, srcE_e_PENCIL);
-Qi_QASCOT = flux_from_source(psiflu, dV, dx_dpsi, srcE_i_QASCOT);
-Qe_QASCOT = flux_from_source(psiflu, dV, dx_dpsi, srcE_e_QASCOT);
+Qi_PENCIL = flux_from_source(psiflu, dV, srcE_i_PENCIL);
+Qe_PENCIL = flux_from_source(psiflu, dV, srcE_e_PENCIL);
+Qi_QASCOT = flux_from_source(psiflu, dV, srcE_i_QASCOT);
+Qe_QASCOT = flux_from_source(psiflu, dV, srcE_e_QASCOT);
 
 
 
@@ -289,7 +295,9 @@ Qe_QASCOT = flux_from_source(psiflu, dV, dx_dpsi, srcE_e_QASCOT);
 
 % Torque deposition from PENCIL [Pa]
 if isnan(NB.NBP.NBP2TORP(ijp,1))
-    fprintf('\nJETPEAK index %d has no data in NB.NBP.NBP2TORP.\n',ijp)
+    if opt.showWarnings
+        fprintf('\nJETPEAK index %d has no data in NB.NBP.NBP2TORP.\n',ijp)
+    end
     srcL_PENCIL = NaN(nflxsurf,1);
 else
     srcL_PENCIL = interpol(sqrt_psin_chain2, NB.NBP.NBP2TORP(ijp,:), sqrt_psin_TRANSP);
@@ -304,6 +312,11 @@ else
         ASCOT.COLLTQI(idxAscot,:) + ASCOT.COLLTQE(idxAscot,:) ...
             + ASCOT.COLLTQIMP(idxAscot,:) + ASCOT.JXBTORQ(idxAscot,:), ...
         sqrt_psin_TRANSP);
+    % Sign conventions in GS2 and ASCOT are opposite:
+    % in GS2, negative = inward,
+    % in ASCOT, negative = outward.
+    % Take this sign into account here:
+    srcL_ASCOT = sign_PI_ASCOT_v_GS2 * srcL_ASCOT;
 end
 
 % Associated toroidal angular momentum flux (see notes) [kg/s^2]
@@ -329,6 +342,7 @@ jData.ijp = ijp;
 jData.idxQAscot = idxQAscot;
 jData.idxAscot = idxAscot;
 jData.Rmag=Rmag;
+jData.Zmag=Zmag;
 jData.Rmaj=Rmaj;
 jData.Rmax=Rmax;
 jData.Rgeo=Rgeo;
@@ -337,7 +351,10 @@ jData.sqrt_psin_chain2=sqrt_psin_chain2;
 jData.dV=dV;
 jData.A_psi=A_psi;
 jData.rpsi=rpsi_TRANSP;
+jData.psiflu = psiflu;
+jData.dx_dpsi = dx_dpsi;
 jData.dR_drpsi=dR_drpsi;
+jData.gradPsiAvg = gradPsiAvg;
 jData.q=q;
 jData.shat=shat;
 jData.kappa=kappa;
@@ -388,9 +405,9 @@ jData.PI_ASCOT = PI_ASCOT;
 
 %% Check data prof., interpolations, derivatives (if plot_verbose)
 
-for iplot = 1:numel(check_iFlxSurf)
+for iplot = 1:numel(opt.check_iFlxSurf)
 
-    iFlxSurf = check_iFlxSurf(iplot);
+    iFlxSurf = opt.check_iFlxSurf(iplot);
     
     % Major radius
     figure;
