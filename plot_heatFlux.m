@@ -199,7 +199,7 @@ lgd_txt{end+1} = 'Experiment (ASCOT)';
 
 % Plot flux from  gs2 simulations
 
-if ~isempty(opt.gs2_fluxFile) && isfield(flx,'Qe_gs2')
+if ~isempty(opt.gs2_fluxFile) && iscol(flx,'Qe_gs2')
     if opt.nrm_gs2
         xvar = flx.rpsi/jData.a;
         yvar = flx.Qe_gs2;
