@@ -192,7 +192,6 @@ if plotverbose
             
     % Plot deposition profiles used
     plot_depo( ijp, 'jData', jData, 'origParams', depoParams.orig, ...
-               'nrm_gs2', nrm_gs2, 'usrParams', usrParams, ...
-               'usrProfs', usrProfs );
+               'nrm_gs2', nrm_gs2 );
 
 end

@@ -25,7 +25,7 @@ options_default = struct( 'jData', [], ...
                           'usrParams', [], ...
                           'nrm_gs2', 0, ...
                           'origParams', [], ...
-                          'usr_profs', [] );
+                          'usrProfs', [] );
 opt = get_optargin(options_default, varargin);
 
 % Only read jData if it is not provided by the user
@@ -143,7 +143,6 @@ for iProf = 1:nProf
     if opt.nrm_gs2
         yvar = []; % TODO
     else
-        yvar = opt.usrParams{iProf}.srcPI;
         if isempty(opt.usrProfs)
             [usrProfs, ~] = set_userDepo(ijp, opt.origParams, opt.usrParams{iProf}, ...
                                      'jData', jData);
