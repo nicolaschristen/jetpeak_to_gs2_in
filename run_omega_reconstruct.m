@@ -23,7 +23,7 @@ tCoeffFile = [dataFolder 'transpCoeff.csv'];
 % Use Pi/Q to reconstruct omega, instead of only Pi ?
 use_Pi_over_Q = 0;
 % flux ~ grad(psi)/|grad(Psi)| ? Else, flux ~ grad(x).
-trinity_norm = 0;
+trinity_norm = 1;
 % Aply GS2 normalisation to plotted quantites ?
 nrm_gs2 = 0;
 % Plot profiles of deposition and fluxes ?

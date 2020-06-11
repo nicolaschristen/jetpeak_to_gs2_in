@@ -1,4 +1,4 @@
-%% Read GS2 turbulent fluxes from a file, and give corresponding normalisations
+%% Read GS2 turbulent fluxes from a file
 %
 % Input :   ijp --  shot index in JETPEAK DB
 %           fname -- name of csv file containing computed fluxes,
@@ -10,7 +10,7 @@
 %           trinity_norm -- [kw, 0] if true, gs2 flux dotted with gradPsi
 %                           else dotted with grad(x).
 %
-% Ouput:    flx -- table containing fluxes read from fname
+% Ouput:    flx -- table containing dimensionful fluxes read from fname
 %
 function flx = read_gs2Fluxes(ijp, fname, varargin)
 
@@ -30,15 +30,15 @@ end
 
 % Read the fluxes from file
 % flux > 0 -> radially outward
-flx = readtable(fname);
+gs2dat = readtable(fname);
 
 %    ------------    %
 
-% Determine indices in jData corresponding to rpsi in flx
-ir_jData = zeros(numel(flx.rhoc),1);
-for ir_flx = 1:numel(flx.rhoc)
-    r = jData.a * flx.rhoc(ir_flx);
-    ir_jData(ir_flx) = find(abs(jData.rpsi-r) == min(abs(jData.rpsi-r)));
+% Determine indices in jData corresponding to rpsi in gs2dat
+ir_jData = zeros(numel(gs2dat.rhoc),1);
+for ir_gs2dat = 1:numel(gs2dat.rhoc)
+    r = jData.a * gs2dat.rhoc(ir_gs2dat);
+    ir_jData(ir_gs2dat) = find(abs(jData.rpsi-r) == min(abs(jData.rpsi-r)));
 end
 
 %    ------------    %
@@ -46,16 +46,38 @@ end
 % Elementary charge
 e=1.602e-19;
 
-% Distinguish normalised quantities from dimensionful ones
-rpsi = flx.rhoc * jData.a;
-GammaNorm = jData.GammaNorm(ir_jData)';
-PINorm = jData.PINorm(ir_jData)';
-QNorm = jData.QNorm(ir_jData)';
+% Make quantities dimensionful
+rpsi = gs2dat.rhoc * jData.a;
+
+% Normalisation factors at simulated radii
+PINorm = interpol(jData.rpsi, jData.PINorm, rpsi);
+QNorm = interpol(jData.rpsi, jData.QNorm, rpsi);
+GammaNorm = interpol(jData.rpsi, jData.GammaNorm, rpsi);
+
+PI = gs2dat.PI_gs2.*PINorm;
+PI_noGexb = gs2dat.PI_noGexb_gs2.*PINorm;
+PI_noMach = gs2dat.PI_noMach_gs2.*PINorm;
+
+Qi = gs2dat.Qi_gs2.*QNorm;
+Qi_noGexb = gs2dat.Qi_noGexb_gs2.*QNorm;
+Qi_noMach = gs2dat.Qi_noMach_gs2.*QNorm;
+
+Qe = gs2dat.Qe_gs2.*QNorm;
+Qe_noGexb = gs2dat.Qe_noGexb_gs2.*QNorm;
+Qe_noMach = gs2dat.Qe_noMach_gs2.*QNorm;
+
+Gamma = gs2dat.Gamma_gs2.*GammaNorm;
+Gamma_noGexb = gs2dat.Gamma_noGexb_gs2.*GammaNorm;
+Gamma_noMach = gs2dat.Gamma_noMach_gs2.*GammaNorm;
 
 %    ------------    %
 
-% Append information for normalisation to table
-to_add_to_table = table(rpsi,GammaNorm,PINorm,QNorm,ir_jData);
-flx = [flx to_add_to_table];
+% Create a table with dimensionful quantities
+flx = table( rpsi,ir_jData, ...
+                PI, PI_noGexb, PI_noMach, ...
+                Qi, Qi_noGexb, Qi_noMach, ...
+                Qe, Qe_noGexb, Qe_noMach, ...
+                Gamma, Gamma_noGexb, Gamma_noMach, ...
+                PINorm, QNorm, GammaNorm );
 
 end

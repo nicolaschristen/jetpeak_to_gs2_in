@@ -113,8 +113,8 @@ recon.Rmaj = interpol(jData.rpsi,jData.Rmaj,recon.rpsi);
 recon.dti_drpsi = interpol(jData.rpsi,jData.dti_drpsi,recon.rpsi);
 % If fluxes have been computed from simulations, then interpolate linearly
 if use_origDepo
-    recon.PI = interp1(flx.rpsi,flx.PI_gs2.*flx.PINorm,recon.rpsi);
-    recon.Qi = interp1(flx.rpsi,flx.Qi_gs2.*flx.QNorm,recon.rpsi);
+    recon.PI = interp1(flx.rpsi,flx.PI,recon.rpsi);
+    recon.Qi = interp1(flx.rpsi,flx.Qi,recon.rpsi);
 % If fluxes are computed from user-specified deposition profiles,
 % then use splines.
 else

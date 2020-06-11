@@ -18,12 +18,11 @@ flx = read_gs2Fluxes(ijp, fluxFile, 'jData', jData);
 %% Compare terms in momentum equation
 
 % Term from the turbulent momentum flux
-PIterm = flx.PI_gs2.*flx.PINorm;
+PIterm = flx.PI;
 % Term from the particle flux, due to change of frame,
 % where <R^2 * Gamma>_psi is approximated by
 % <Gamma>_psi * Rmag.
-Gterm = flx.Gamma_gs2.*flx.GammaNorm ...
-        * jData.mref.*abs(jData.omega(flx.ir_jData))'*jData.Rmag^2;
+Gterm = flx.Gamma * jData.mref.*abs(jData.omega(flx.ir_jData))'*jData.Rmag^2;
 
 figure
 plot(flx.rpsi,PIterm)
@@ -47,7 +46,7 @@ S_transf = jData.srcE_ie_QASCOT;
 domega_dpsi = interpol(jData.psiflu,jData.omega,jData.psiflu,1);
 domega_dpsi = domega_dpsi(flx.ir_jData)';
 S_turb = abs(domega_dpsi) ./ jData.dx_dpsi(flx.ir_jData)' .* ...
-    (flx.PI_gs2.*flx.PINorm + jData.mref*jData.omega(flx.ir_jData)'*jData.Rmag^2.*flx.Gamma_gs2.*flx.GammaNorm);
+    (flx.PI + jData.mref*jData.omega(flx.ir_jData)'*jData.Rmag^2.*flx.Gamma);
 
 figure
 plot(jData.rpsi,S_ext)

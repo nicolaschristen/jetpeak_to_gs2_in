@@ -65,7 +65,9 @@ figure
 
 if opt.nrm_gs2
     xvar = opt.jData.rpsi/opt.jData.a;
-    yvar = (opt.jData.PI_ASCOT./opt.jData.PINorm)./(opt.jData.Qi_QASCOT./opt.jData.QNorm);
+    PI_gs2 = opt.jData.PI_ASCOT./opt.jData.PINorm;
+    Qi_gs2 = opt.jData.Qi_ASCOT./opt.jData.QNorm;
+    yvar = PI_gs2./Qi_gs2;
 else
     xvar = opt.jData.rpsi;
     yvar = opt.jData.PI_ASCOT./opt.jData.Qi_QASCOT;
@@ -79,10 +81,12 @@ lgd_txt = {'Experiment (ASCOT)'};
 if ~isempty(opt.gs2_fluxFile)
     if opt.nrm_gs2
         xvar = flx.rpsi/opt.jData.a;
-        yvar = flx.PI_gs2./flx.Qi_gs2;
+        PI_gs2 = flx.PI./flx.PINorm;
+        Qi_gs2 = flx.Qi./flx.QNorm;
+        yvar = PI_gs2./Qi_gs2;
     else
         xvar = flx.rpsi;
-        yvar = flx.PI_gs2.*flx.PINorm./(flx.Qi_gs2.*flx.QNorm);
+        yvar = flx.PI./flx.Qi;
     end
     hold on
     lgd_h(end+1) = plot(xvar, yvar, ...
@@ -95,7 +99,9 @@ end
 
 if opt.nrm_gs2
     xvar = opt.jData.rpsi/opt.jData.a;
-    yvar = (opt.jData.PI_ASCOT./opt.jData.PINorm)./(opt.jData.Qi_QASCOT./opt.jData.QNorm);
+    PI_gs2 = opt.jData.PI_ASCOT./opt.jData.PINorm;
+    Qi_gs2 = opt.jData.Qi_ASCOT./opt.jData.QNorm;
+    yvar = PI_gs2./Qi_gs2;
 else
     xvar = opt.jData.rpsi;
     yvar = opt.jData.PI_ASCOT./opt.jData.Qi_QASCOT;

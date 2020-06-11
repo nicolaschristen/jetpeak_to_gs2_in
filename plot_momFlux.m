@@ -91,10 +91,10 @@ lgd_txt{end+1} = 'Experiment (ASCOT)';
 if ~isempty(opt.gs2_fluxFile)
     if opt.nrm_gs2
         xvar = flx.rpsi/jData.a;
-        yvar = flx.PI_gs2;
+        yvar = flx.PI./flx.PINorm;
     else
         xvar = flx.rpsi;
-        yvar = flx.PI_gs2.*flx.PINorm;
+        yvar = flx.PI;
     end
     hold on
     lgd_h(end+1) = semilogy(xvar, yvar, ...

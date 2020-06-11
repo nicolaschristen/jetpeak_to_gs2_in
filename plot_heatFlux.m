@@ -94,10 +94,10 @@ lgd_txt{end+1} = 'Experiment (ASCOT)';
 if ~isempty(opt.gs2_fluxFile)
     if opt.nrm_gs2
         xvar = flx.rpsi/jData.a;
-        yvar = flx.Qi_gs2;
+        yvar = flx.Qi./flx.QNorm;
     else
         xvar = flx.rpsi;
-        yvar = flx.Qi_gs2.*flx.QNorm;
+        yvar = flx.Qi;
     end
     hold on
     lgd_h(end+1) = semilogy(xvar, yvar, ...
@@ -181,13 +181,13 @@ lgd_txt{end+1} = 'Experiment (ASCOT)';
 
 % Plot flux from gs2 simulations
 
-if ~isempty(opt.gs2_fluxFile) && iscol(flx,'Qe_gs2')
+if ~isempty(opt.gs2_fluxFile) && iscol(flx,'Qe')
     if opt.nrm_gs2
         xvar = flx.rpsi/jData.a;
-        yvar = flx.Qe_gs2;
+        yvar = flx.Qe./flx.QNorm;
     else
         xvar = flx.rpsi;
-        yvar = flx.Qe_gs2.*flx.QNorm;
+        yvar = flx.Qe;
     end
     hold on
     lgd_h(end+1) = semilogy(xvar, yvar, ...
