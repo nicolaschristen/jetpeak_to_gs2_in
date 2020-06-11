@@ -21,10 +21,10 @@ fluxFile = [dataFolder 'fluxes_gs2.csv'];
 tCoeffFile = [dataFolder 'transpCoeff.csv'];
 
 % Use Pi/Q to reconstruct omega, instead of only Pi ?
-use_Pi_over_Q = 1;
-% Pi ~ grad(x) ? Else, Pi ~ grad(psi)/|grad(Psi)|.
-trinity_norm = 1;
-% Aply GS2 normalisation to final quantites ?
+use_Pi_over_Q = 0;
+% flux ~ grad(psi)/|grad(Psi)| ? Else, flux ~ grad(x).
+trinity_norm = 0;
+% Aply GS2 normalisation to plotted quantites ?
 nrm_gs2 = 0;
 % Plot profiles of deposition and fluxes ?
 plotverbose = 1;
@@ -54,7 +54,7 @@ end
 %% First get the experimental profile from the JETPEAK database.
 
 
-jData = read_jData(ijp);
+jData = read_jData(ijp, 'trinity_norm', trinity_norm);
 r_expt = jData.rpsi;
 om_expt = jData.omega;
 if nrm_gs2

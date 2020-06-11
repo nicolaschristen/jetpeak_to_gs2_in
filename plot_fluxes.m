@@ -31,7 +31,7 @@ opt_defaults = struct( 'ylim_heat', [], ...
 opt = get_optargin(opt_defaults, varargin);
 
 if isempty(opt.jData)
-    opt.jData = read_jData(ijp);
+    opt.jData = read_jData(ijp, 'trinity_norm', opt.trinity_norm);
 end
 
 % Plot Q
@@ -59,29 +59,33 @@ if ~isempty(opt.gs2_fluxFile)
                           'trinity_norm', opt.trinity_norm );
 end
 
-% Plot Pi/Q
+% Plot Pi/Q from experiment
 
 figure
 
 if opt.nrm_gs2
     xvar = opt.jData.rpsi/opt.jData.a;
+    yvar = (opt.jData.PI_ASCOT./opt.jData.PINorm)./(opt.jData.Qi_QASCOT./opt.jData.QNorm);
 else
     xvar = opt.jData.rpsi;
+    yvar = opt.jData.PI_ASCOT./opt.jData.Qi_QASCOT;
 end
-h = plot(xvar, opt.jData.PI_ASCOT./opt.jData.Qi_QASCOT);
+h = plot(xvar, yvar);
 lgd_h = [h];
 lgd_txt = {'Experiment (ASCOT)'};
 
-% Plot fluxes from gs2
+% Plot Pi/Q from GS2
 
 if ~isempty(opt.gs2_fluxFile)
     if opt.nrm_gs2
         xvar = flx.rpsi/opt.jData.a;
+        yvar = flx.PI_gs2./flx.Qi_gs2;
     else
         xvar = flx.rpsi;
+        yvar = flx.PI_gs2.*flx.PINorm./(flx.Qi_gs2.*flx.QNorm);
     end
     hold on
-    lgd_h(end+1) = plot(xvar, flx.PI_gs2.*flx.PINorm./(flx.Qi_gs2.*flx.QNorm), ...
+    lgd_h(end+1) = plot(xvar, yvar, ...
                         'Marker', '.', ...
                         'MarkerSize', 20);
     lgd_txt{end+1} = 'GS2';
@@ -91,14 +95,15 @@ end
 
 if opt.nrm_gs2
     xvar = opt.jData.rpsi/opt.jData.a;
+    yvar = (opt.jData.PI_ASCOT./opt.jData.PINorm)./(opt.jData.Qi_QASCOT./opt.jData.QNorm);
 else
     xvar = opt.jData.rpsi;
+    yvar = opt.jData.PI_ASCOT./opt.jData.Qi_QASCOT;
 end
 color = get(h, 'Color');
 alpha = 0.3;
 hold on
-confid_area(gcf, xvar, opt.jData.PI_ASCOT./opt.jData.Qi_QASCOT*0.8, ...
-    opt.jData.PI_ASCOT./opt.jData.Qi_QASCOT*1.2, color, alpha)
+confid_area(gcf, xvar, yvar*0.8, yvar*1.2, color, alpha)
 
 % Fine-tune figure
 
@@ -111,11 +116,13 @@ end
 grid on
 if opt.nrm_gs2
     xlab = '$r_\psi/a$';
+    ylab = '$\sum_s \Pi_s / Q_i$ [$v_{thr}/(2r_r)$]';
 else
     xlab = '$r_\psi$ [m]';
+    ylab = '$\sum_s \Pi_s / Q_i$ [s$^{-1}$]';
 end
 xlabel(xlab)
-ylabel('$\sum_s \Pi_s / Q_i$')
+ylabel(ylab)
 if opt.showAllCodes || ~isempty(opt.gs2_fluxFile)
     legend(lgd_h, lgd_txt, 'Location', 'NorthEast','FontSize',14)
 end

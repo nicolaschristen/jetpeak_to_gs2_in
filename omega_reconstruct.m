@@ -64,7 +64,7 @@ cst.e = 1.602176634e-19;
 
 % Read data for this shot from JETPEAK
 if isempty(opt.jData)
-    jData = read_jData(ijp);
+    jData = read_jData(ijp, 'trinity_norm', opt.trinity_norm);
 else
     jData = opt.jData;
 end

@@ -6,6 +6,8 @@
 %                             check is needed
 %           showWarnings -- [kw, 0] show warnings when part of the data is
 %                           incomplete
+%           trinity_norm -- [kw, 0] if true, gs2 flux dotted with gradPsi
+%                           else dotted with grad(x).
 %
 % Output:   jData -- structure with dimensionful extracted data
 %
@@ -16,7 +18,8 @@ function jData = read_jData(ijp, varargin)
 
 opt_defaults = struct( 'skip_I', 0, ...
                        'check_iFlxSurf', [], ...
-                       'showWarnings', 0 );
+                       'showWarnings', 0, ...
+                       'trinity_norm', 0 );
 opt = get_optargin(opt_defaults, varargin);
 
 % loading databases
@@ -394,11 +397,32 @@ jData.Qi_PENCIL = Qi_PENCIL;
 jData.Qi_QASCOT = Qi_QASCOT;
 jData.Qe_PENCIL = Qe_PENCIL;
 jData.Qe_QASCOT = Qe_QASCOT;
+% Normalisation factor
+if opt.trinity_norm
+    jData.QNorm = jData.nref*e.*jData.tref.*jData.vthref.*jData.rhostar.^2.*jData.gradPsiAvg;
+else
+    jData.QNorm = jData.nref*e.*jData.tref.*jData.vthref.*jData.rhostar.^2./jData.dx_dpsi;
+end
 
 jData.srcL_PENCIL = srcL_PENCIL;
 jData.srcL_ASCOT = srcL_ASCOT;
 jData.PI_PENCIL = PI_PENCIL;
 jData.PI_ASCOT = PI_ASCOT;
+% Normalisation factor
+if opt.trinity_norm
+    jData.PINorm = jData.nref*jData.mref.*jData.vthref.^2.*jData.a.*jData.rhostar.^2 ...
+                   .*jData.gradPsiAvg;
+else
+    jData.PINorm = jData.nref*jData.mref.*jData.vthref.^2.*jData.a.*jData.rhostar.^2 ...
+                   ./jData.dx_dpsi;
+end
+
+% Normalisation factor for the particle flux
+if opt.trinity_norm
+    jData.GammaNorm = jData.nref.*jData.vthref.*jData.rhostar.^2.*jData.gradPsiAvg;
+else
+    jData.GammaNorm = jData.nref.*jData.vthref.*jData.rhostar.^2./jData.dx_dpsi;
+end
 
 
 

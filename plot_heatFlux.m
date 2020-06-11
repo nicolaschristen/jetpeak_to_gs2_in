@@ -33,12 +33,15 @@ e=1.602e-19;
     
 % Only read data if it has not been passed as an argument
 if isempty(opt.jData)
-    jData = read_jData(ijp);
+    jData = read_jData(ijp, 'trinity_norm', opt.trinity_norm);
 else
     jData = opt.jData;
 end
 
+% Function output
 r = jData.rpsi;
+Qi_ASC = jData.Qi_QASCOT;
+Qe_ASC = jData.Qe_QASCOT;
     
 % Read GS2 fluxes form file
 
@@ -53,36 +56,23 @@ figure
 lgd_h = [];
 lgd_txt = {};
 
-% Read data
-Qi_PEN = jData.Qi_PENCIL;
-Qi_ASC = jData.Qi_QASCOT;
-
-% GS2 normalisations
-if ~opt.trinity_norm
-    QNorm = jData.nref*e.*jData.tref.*jData.vthref.*jData.rhostar.^2./jData.dx_dpsi;
-else
-    QNorm = jData.nref*e.*jData.tref.*jData.vthref.*jData.rhostar.^2.*jData.gradPsiAvg;
-end
-Qi_PEN_GS2 = Qi_PEN./QNorm;
-Qi_ASC_GS2 = Qi_ASC./QNorm;
-
 % Plot
 
 if opt.nrm_gs2
     xvar = jData.rpsi/jData.a;
     xlab = '$r_\psi/a$';
     ylab = '$Q_i$ [$n_r T_r v_{thr} \rho_\star^2$]';
-    yvar_PEN = Qi_PEN_GS2;
-    yvar_ASC = Qi_ASC_GS2;
+    yvar_PEN = jData.Qi_PENCIL./jData.QNorm;
+    yvar_ASC = jData.Qi_QASCOT./jData.QNorm;
 else
     xvar = jData.rpsi;
     xlab = '$r_\psi$ [m]';
     ylab = '$Q_i$ [W/m$^2$]';
-    yvar_PEN = Qi_PEN;
-    yvar_ASC = Qi_ASC;
+    yvar_PEN = jData.Qi_PENCIL;
+    yvar_ASC = jData.Qi_QASCOT;
 end
 
-if ~isnan(Qi_PEN_GS2(1)) && opt.showAllCodes
+if ~isnan(jData.Qi_PENCIL(1)) && opt.showAllCodes
 
     h = semilogy(xvar, yvar_PEN);
     lgd_h(end+1) = h;
@@ -156,31 +146,23 @@ figure
 lgd_h = [];
 lgd_txt = {};
 
-% Read data
-Qe_PEN = jData.Qe_PENCIL;
-Qe_ASC = jData.Qe_QASCOT;
-
-% GS2 normalisations
-Qe_PEN_GS2 = Qe_PEN./QNorm;
-Qe_ASC_GS2 = Qe_ASC./QNorm;
-
 % Plot
 
 if opt.nrm_gs2
     xvar = jData.rpsi/jData.a;
     xlab = '$r_\psi/a$';
     ylab = '$Q_e$ [$n_r T_r v_{thr} \rho_\star^2$]';
-    yvar_PEN = Qe_PEN_GS2;
-    yvar_ASC = Qe_ASC_GS2;
+    yvar_PEN = jData.Qe_PENCIL./jData.QNorm;
+    yvar_ASC = jData.Qe_QASCOT./jData.QNorm;
 else
     xvar = jData.rpsi;
     xlab = '$r_\psi$ [m]';
     ylab = '$Q_e$ [W/m$^2$]';
-    yvar_PEN = Qe_PEN;
-    yvar_ASC = Qe_ASC;
+    yvar_PEN = jData.Qe_PENCIL;
+    yvar_ASC = jData.Qe_QASCOT;
 end
 
-if ~isnan(Qe_PEN_GS2(1)) && opt.showAllCodes
+if ~isnan(jData.Qe_PENCIL(1)) && opt.showAllCodes
 
     h = semilogy(xvar, yvar_PEN);
     lgd_h(end+1) = h;
@@ -197,7 +179,7 @@ h = semilogy(xvar, yvar_ASC);
 lgd_h(end+1) = h;
 lgd_txt{end+1} = 'Experiment (ASCOT)';
 
-% Plot flux from  gs2 simulations
+% Plot flux from gs2 simulations
 
 if ~isempty(opt.gs2_fluxFile) && iscol(flx,'Qe_gs2')
     if opt.nrm_gs2

@@ -32,12 +32,14 @@ e=1.602e-19;
     
 % Only read data if it has not been passed as an argument
 if isempty(opt.jData)
-    jData = read_jData(ijp);
+    jData = read_jData(ijp, 'trinity_norm', opt.trinity_norm);
 else
     jData = opt.jData;
 end
 
+% Output
 r = jData.rpsi;
+PI_ASC = jData.PI_ASCOT;
     
 % Read GS2 fluxes form file
 
@@ -52,36 +54,23 @@ figure
 lgd_h = [];
 lgd_txt = {};
 
-% Read data
-PI_PEN = jData.PI_PENCIL;
-PI_ASC = jData.PI_ASCOT;
-
-% GS2 normalisations
-if ~opt.trinity_norm
-    PINorm = jData.nref.*jData.mref.*jData.vthref.^2.*jData.a.*jData.rhostar.^2./jData.dx_dpsi;
-else
-    PINorm = jData.nref.*jData.mref.*jData.vthref.^2.*jData.a.*jData.rhostar.^2.*jData.gradPsiAvg;
-end
-PI_PEN_GS2 = PI_PEN./PINorm;
-PI_ASC_GS2 = PI_ASC./PINorm;
-
 % Plot
 
 if opt.nrm_gs2
     xvar = jData.rpsi/jData.a;
     xlab = '$r_\psi/a$';
-    ylab = '$\sum_s\Pi_s$ [$n_r$ $m_r$ $v_{thr}^2$ $\rho_\star^2$]';
-    yvar_PEN = PI_PEN_GS2;
-    yvar_ASC = PI_ASC_GS2;
+    ylab = '$\sum_s\Pi_s$ [$n_r$ $r_r$ $m_r$ $v_{thr}^2$ $\rho_\star^2$]';
+    yvar_PEN = jData.PI_PENCIL./jData.PINorm;
+    yvar_ASC = jData.PI_ASCOT./jData.PINorm;
 else
     xvar = jData.rpsi;
     xlab = '$r_\psi$ [m]';
     ylab = '$\sum_s\Pi_s$ [kg/s$^2$]';
-    yvar_PEN = PI_PEN;
-    yvar_ASC = PI_ASC;
+    yvar_PEN = jData.PI_PENCIL;
+    yvar_ASC = jData.PI_ASCOT;
 end
 
-if ~isnan(PI_PEN_GS2(1)) && opt.showAllCodes
+if ~isnan(jData.PI_PENCIL(1)) && opt.showAllCodes
 
     lgd_h(end+1) = semilogy(xvar, yvar_PEN);
     hold on
