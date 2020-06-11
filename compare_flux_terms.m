@@ -22,7 +22,8 @@ PIterm = flx.PI;
 % Term from the particle flux, due to change of frame,
 % where <R^2 * Gamma>_psi is approximated by
 % <Gamma>_psi * Rmag.
-Gterm = flx.Gamma * jData.mref.*abs(jData.omega(flx.ir_jData))'*jData.Rmag^2;
+om_flx = interpol(jData.rpsi, jData.omega, flx.rpsi);
+Gterm = flx.Gamma * jData.mref.*abs(om_flx)*jData.Rmag^2;
 
 figure
 plot(flx.rpsi,PIterm)
@@ -44,9 +45,10 @@ S_transf = jData.srcE_ie_QASCOT;
 % Turbulent heating, where <R^2 * Gamma>_psi is approximated by
 % <Gamma>_psi * Rmag.
 domega_dpsi = interpol(jData.psiflu,jData.omega,jData.psiflu,1);
-domega_dpsi = domega_dpsi(flx.ir_jData)';
-S_turb = abs(domega_dpsi) ./ jData.dx_dpsi(flx.ir_jData)' .* ...
-    (flx.PI + jData.mref*jData.omega(flx.ir_jData)'*jData.Rmag^2.*flx.Gamma);
+domega_dpsi_flx = interpol(jData.rpsi, domega_dpsi, flx.rpsi);
+dx_dpsi_flx = interpol(jData.rpsi, jData.dx_dpsi, flx.rpsi);
+S_turb = abs(domega_dpsi_flx) ./ dx_dpsi_flx .* ...
+    (flx.PI + jData.mref*om_flx*jData.Rmag^2.*flx.Gamma);
 
 figure
 plot(jData.rpsi,S_ext)

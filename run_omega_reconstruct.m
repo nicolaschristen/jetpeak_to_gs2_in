@@ -66,12 +66,12 @@ end
 
 
 %% Then compute the reconstructed profile.
-% At the same time, compute the transport coefficients
-% and write them to a file.
+% Process involves computing the transport coefficients
+% and writing them to a file.
 
 
 omegaFile = [dataFolder 'omegaReconstruct.csv'];
-[r, om_rcst, ~, ~] = omega_reconstruct( ijp, fluxFile, ...
+[r_sim, om_rcst, ~, ~] = omega_reconstruct( ijp, fluxFile, ...
     'fname_omega', omegaFile, ...
     'use_Pi_over_Q', use_Pi_over_Q, ...
     'nrm_gs2', nrm_gs2, ...
@@ -80,28 +80,17 @@ omegaFile = [dataFolder 'omegaReconstruct.csv'];
     'trinity_norm', trinity_norm );
 % Choose whether to normalise to GS2 units
 if nrm_gs2
-    r = r/jData.a;
-    for ir = 1:numel(r)
-        rtmp = r(ir);
-        ir_jetpeak2rcst = find(abs(jData.rpsi-rtmp) == min(abs(jData.rpsi-rtmp)));
-        om_rcst(ir) = om_rcst(ir)*jData.a/jData.vthref(ir_jetpeak2rcst);
-    end
+    r_sim = r_sim/jData.a;
+    vthref_sim = interpol(jData.rpsi, jData.vthref, r_sim);
+    om_rcst = om_rcst*jData.a./vthref_sim;
 end
+
 
 %    ------------    %
 
 
-%% Compute omega with user-specified deposition profiles
-
-
-% Cell-array containing structures with each of the user-set deposition
-% parameters
-usrParams = {};
-% Cell-array with associated deposition profiles
-usrProfs = {};
-
-% Specify width and norm of manual fit for the
-% experimental deposition profiles
+%% Parameters used to manually fit experimental deposition profiles
+% with a Gaussian function.
 
 depoParams.orig.SQi.width = 0.3;
 depoParams.orig.SQi.nrm = 3.25e5;
@@ -116,8 +105,28 @@ depoParams.orig.SPi.nrm = 0.6;
 depoParams.orig.SPi.mpos = 0.0;
 depoParams.orig.SPi.skew = 0.0;
 
-% Sanity check: specify the deposition profile such that they fit the
-% experimental profiles. Should give same result as 'reconstructed' above.
+
+
+%    ------------    %
+
+
+%% Compute omega with user-specified deposition profiles
+
+
+
+% Cell-array with each element corresponding to a structure of user-specified
+% parameters used to modify the deposition profiles.
+usrParams = {};
+% Cell-array of deposition profiles associated with usrParams
+usrProfs = {};
+
+
+
+% User-specified case #1:
+
+% Sanity check. User-specified depositions are set to be equal to the fitted
+% experimental values. If the GS2 simulations match the experiment well enough,
+% this should give the same result as 'reconstructed' above.
 
 % Same power as manual fit to experiment
 depoParams.usr.cP = 1;
@@ -126,7 +135,7 @@ depoParams.usr.cl = 1;
 % Same energy as experiment
 depoParams.usr.cE = 0.5;
 
-% Add these parameters to the usrParams
+% Add these parameters to usrParams
 usrParams{end+1} = depoParams.usr;
 
 omegaFile = [dataFolder 'omega_doublePower.csv'];
@@ -138,17 +147,13 @@ omegaFile = [dataFolder 'omega_doublePower.csv'];
     'jData', jData, ...
     'trinity_norm', trinity_norm );
 
-% Add user-specified deposition profiles to the usrProfs
+% Add corresponding deposition profiles to usrProfs
 usrProfs{end+1}.srcQi = srcQi;
 usrProfs{end}.srcPI = srcPI;
 
 % Choose whether to normalise to GS2 units
 if nrm_gs2
-    for ir = 1:numel(r)
-        rtmp = r(ir);
-        ir_jetpeak2fit = find(abs(jData.rpsi-rtmp) == min(abs(jData.rpsi-rtmp)));
-        om_fittedDepo(ir) = om_fittedDepo(ir)*jData.a/jData.vthref(ir_jetpeak2fit);
-    end
+    om_fittedDepo = om_fittedDepo*jData.a./vthref_sim;
 end
 
 %    ------------    %
@@ -162,11 +167,11 @@ figure
 lgd_h = [plot(r_expt, abs(om_expt), 'LineWidth', 2)];
 lgd_txt = {'Experiment'};
 hold on
-lgd_h(end+1) = plot(r, abs(om_rcst), 'LineWidth', 2, 'Marker', 'o', ...
+lgd_h(end+1) = plot(r_sim, abs(om_rcst), 'LineWidth', 2, 'Marker', 'o', ...
     'LineStyle', 'none', 'MarkerSize', 10);
 lgd_txt{end+1} = 'GS2 reconstruction';
 hold on
-lgd_h(end+1) = plot(r, abs(om_fittedDepo), 'LineWidth', 2, 'Marker', '+', ...
+lgd_h(end+1) = plot(r_sim, abs(om_fittedDepo), 'LineWidth', 2, 'Marker', '+', ...
     'LineStyle', 'none', 'MarkerSize', 8);
 lgd_txt{end+1} = 'GS2 + flux from experiment';
 xlabel(xlab)
@@ -191,6 +196,7 @@ if plotverbose
                  'trinity_norm', trinity_norm );
             
     % Plot deposition profiles used
+
     plot_depo( ijp, 'jData', jData, 'origParams', depoParams.orig, ...
                'nrm_gs2', nrm_gs2 );
 

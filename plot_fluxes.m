@@ -66,7 +66,7 @@ figure
 if opt.nrm_gs2
     xvar = opt.jData.rpsi/opt.jData.a;
     PI_gs2 = opt.jData.PI_ASCOT./opt.jData.PINorm;
-    Qi_gs2 = opt.jData.Qi_ASCOT./opt.jData.QNorm;
+    Qi_gs2 = opt.jData.Qi_QASCOT./opt.jData.QNorm;
     yvar = PI_gs2./Qi_gs2;
 else
     xvar = opt.jData.rpsi;
@@ -100,7 +100,7 @@ end
 if opt.nrm_gs2
     xvar = opt.jData.rpsi/opt.jData.a;
     PI_gs2 = opt.jData.PI_ASCOT./opt.jData.PINorm;
-    Qi_gs2 = opt.jData.Qi_ASCOT./opt.jData.QNorm;
+    Qi_gs2 = opt.jData.Qi_QASCOT./opt.jData.QNorm;
     yvar = PI_gs2./Qi_gs2;
 else
     xvar = opt.jData.rpsi;

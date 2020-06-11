@@ -35,6 +35,8 @@ else
     jData = opt.jData;
 end
 
+cst.e = 1.602e-19; % elementary charge
+
 % Get number of user-specified profiles
 nProf = numel(opt.usrParams);
 
@@ -56,8 +58,9 @@ figure
 
 % Experimental
 if opt.nrm_gs2
-    yvar = []; % TODO
-    ylab = ''; % TODO
+    normfac = cst.e*jData.nref.*jData.tref.*jData.vthref./jData.a.*jData.rhostar.^2;
+    yvar = jData.srcE_i_QASCOT ./ normfac;
+    ylab = '$S_{Q,i}$ [$n_r T_r \rho_\star^2 v_{thr}/r_r$]';
 else
     yvar = jData.srcE_i_QASCOT;
     ylab = '$S_{Q,i}$ [W/m$^3$]';
@@ -72,7 +75,8 @@ grid on
 % Show skewed Gaussian fit
 if ~isempty(opt.origParams)
     if opt.nrm_gs2
-        yvar = []; % TODO
+        yvar = gauSkew( jData.rpsi, opt.origParams.SQi.mpos, opt.origParams.SQi.width, ...
+                        opt.origParams.SQi.nrm, opt.origParams.SQi.skew ) ./ normfac;
     else
         yvar = gauSkew( jData.rpsi, opt.origParams.SQi.mpos, opt.origParams.SQi.width, ...
                         opt.origParams.SQi.nrm, opt.origParams.SQi.skew );
@@ -84,12 +88,16 @@ end
 
 % User-specified
 for iProf = 1:nProf
+    [usrProfs, ~] = set_userDepo(ijp, opt.origParams, opt.usrParams{iProf}, ...
+        'jData', jData);
     if opt.nrm_gs2
-        yvar = []; % TODO
+        if isempty(opt.usrProfs)
+            yvar = usrProfs.srcQi ./ normfac;
+        else
+            yvar = opt.usrProfs{iProf}.srcQi ./ normfac;
+        end
     else
         if isempty(opt.usrProfs)
-            [usrProfs, ~] = set_userDepo(ijp, opt.origParams, opt.usrParams{iProf}, ...
-                                     'jData', jData);
             yvar = usrProfs.srcQi;
         else
             yvar = opt.usrProfs{iProf}.srcQi;
@@ -112,8 +120,9 @@ figure
 
 % Experimental
 if opt.nrm_gs2
-    yvar = []; % TODO
-    ylab = ''; % TODO
+    normfac = jData.rhostar.^2.*jData.nref.*jData.mref.*jData.vthref.^2;
+    yvar = jData.srcL_ASCOT ./ normfac;
+    ylab = '$S_{\Pi}$ [$n_r m_r v_{thr}^2 \rho_\star^2$]';
 else
     yvar = jData.srcL_ASCOT;
     ylab = '$S_{\Pi}$ [Pa]';
@@ -128,7 +137,8 @@ grid on
 % Show skewed Gaussian fit
 if ~isempty(opt.origParams)
     if opt.nrm_gs2
-        yvar = []; % TODO
+        yvar = gauSkew( jData.rpsi, opt.origParams.SPi.mpos, opt.origParams.SPi.width, ...
+                        opt.origParams.SPi.nrm, opt.origParams.SPi.skew ) ./ normfac;
     else
         yvar = gauSkew( jData.rpsi, opt.origParams.SPi.mpos, opt.origParams.SPi.width, ...
                         opt.origParams.SPi.nrm, opt.origParams.SPi.skew );
@@ -140,12 +150,16 @@ end
 
 % User-specified
 for iProf = 1:nProf
+    [usrProfs, ~] = set_userDepo(ijp, opt.origParams, opt.usrParams{iProf}, ...
+        'jData', jData);
     if opt.nrm_gs2
-        yvar = []; % TODO
+        if isempty(opt.usrProfs)
+            yvar = usrProfs.srcPI ./ normfac;
+        else
+            yvar = opt.usrProfs{iProf}.srcPI ./ normfac;
+        end
     else
         if isempty(opt.usrProfs)
-            [usrProfs, ~] = set_userDepo(ijp, opt.origParams, opt.usrParams{iProf}, ...
-                                     'jData', jData);
             yvar = usrProfs.srcPI;
         else
             yvar = opt.usrProfs{iProf}.srcPI;

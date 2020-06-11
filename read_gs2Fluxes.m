@@ -34,15 +34,6 @@ gs2dat = readtable(fname);
 
 %    ------------    %
 
-% Determine indices in jData corresponding to rpsi in gs2dat
-ir_jData = zeros(numel(gs2dat.rhoc),1);
-for ir_gs2dat = 1:numel(gs2dat.rhoc)
-    r = jData.a * gs2dat.rhoc(ir_gs2dat);
-    ir_jData(ir_gs2dat) = find(abs(jData.rpsi-r) == min(abs(jData.rpsi-r)));
-end
-
-%    ------------    %
-
 % Elementary charge
 e=1.602e-19;
 
@@ -73,11 +64,10 @@ Gamma_noMach = gs2dat.Gamma_noMach_gs2.*GammaNorm;
 %    ------------    %
 
 % Create a table with dimensionful quantities
-flx = table( rpsi,ir_jData, ...
+flx = table( rpsi, PINorm, QNorm, GammaNorm, ...
                 PI, PI_noGexb, PI_noMach, ...
                 Qi, Qi_noGexb, Qi_noMach, ...
                 Qe, Qe_noGexb, Qe_noMach, ...
-                Gamma, Gamma_noGexb, Gamma_noMach, ...
-                PINorm, QNorm, GammaNorm );
+                Gamma, Gamma_noGexb, Gamma_noMach );
 
 end
