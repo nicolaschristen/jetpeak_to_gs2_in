@@ -5,8 +5,9 @@
 % vvv USER PARAMETERS vvv %
 % vvvvvvvvvvvvvvvvvvvvvvv %
 
+% Paths to code
+addpath('~/codes/matlab/tools/')
 addpath('~/codes/jetpeak_v_gs2/')
-format long
 
 % Shot index in JETPEAK
 ijp = 950;
@@ -34,6 +35,13 @@ ylim_Q = [];
 ylim_PI = [];
 ylim_PI_over_Q = [];
 
+% ^^^^^^^^^^^^^^^^^^^^^^^ %
+% ^^^ USER PARAMETERS ^^^ %
+% ^^^^^^^^^^^^^^^^^^^^^^^ %
+
+
+format long
+
 if nrm_gs2
     xlab = '$r_\psi/a$';
     ylab = '$\Omega_\phi$ [$v_{thr}$/$a$]';
@@ -41,11 +49,6 @@ else
     xlab = '$r_\psi$ [m]';
     ylab = '$\Omega_\phi$ [rad/s]';
 end
-
-% ^^^^^^^^^^^^^^^^^^^^^^^ %
-% ^^^ USER PARAMETERS ^^^ %
-% ^^^^^^^^^^^^^^^^^^^^^^^ %
-
 
 
 %    ------------    %
