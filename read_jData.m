@@ -297,10 +297,10 @@ srcE_i_QASCOT = srcE_i_QASCOT - srcE_ie_QASCOT;
 srcE_e_QASCOT = srcE_e_QASCOT + srcE_ie_QASCOT;
 
 % Associated ion and electron heat fluxes (see notes) [kg/(s^3)]
-Qi_PENCIL = flux_from_source(psiflu, dV, srcE_i_PENCIL);
-Qe_PENCIL = flux_from_source(psiflu, dV, srcE_e_PENCIL);
-Qi_QASCOT = flux_from_source(psiflu, dV, srcE_i_QASCOT);
-Qe_QASCOT = flux_from_source(psiflu, dV, srcE_e_QASCOT);
+Qi_PENCIL = flux_from_source(dV, dV_dpsi, srcE_i_PENCIL);
+Qe_PENCIL = flux_from_source(dV, dV_dpsi, srcE_e_PENCIL);
+Qi_QASCOT = flux_from_source(dV, dV_dpsi, srcE_i_QASCOT);
+Qe_QASCOT = flux_from_source(dV, dV_dpsi, srcE_e_QASCOT);
 
 
 
@@ -334,8 +334,8 @@ else
 end
 
 % Associated toroidal angular momentum flux (see notes) [kg/s^2]
-PI_PENCIL = flux_from_source(psiflu, dV, dx_dpsi, srcL_PENCIL);
-PI_ASCOT = flux_from_source(psiflu, dV, dx_dpsi, srcL_ASCOT);
+PI_PENCIL = flux_from_source(dV, dV_dpsi, srcL_PENCIL);
+PI_ASCOT = flux_from_source(dV, dV_dpsi, srcL_ASCOT);
 
 
 

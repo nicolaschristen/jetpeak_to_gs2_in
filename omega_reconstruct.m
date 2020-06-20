@@ -84,8 +84,8 @@ else
                                         'nrm_gs2', opt.nrm_gs2 );
     % Compute the assiocated fluxes
     flx.rpsi = usrDepo.rpsi;
-    flx.PI = flux_from_source(jData.psiflu, jData.dV, jData.dx_dpsi, usrDepo.srcPi);
-    flx.Qi = flux_from_source(jData.psiflu, jData.dV, jData.dx_dpsi, usrDepo.srcQi);
+    flx.PI = flux_from_source(jData.dV, jData.dV_dpsi, usrDepo.srcPi);
+    flx.Qi = flux_from_source(jData.dV, jData.dV_dpsi, usrDepo.srcQi);
 
     % Read transport coefficients from file
     tCoeff = readtable(fname);
