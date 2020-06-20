@@ -78,6 +78,17 @@ nflxsurf=numel(psiflu); % number of flux surf.
 
 % Volume elements dV(i) = V(psi(i))-V(psi(i-1))
 dV = TRANSP.G.DVOL(itransp,:);
+
+% Volume of flux surfaces
+V = zeros(1, nflxsurf);
+V(1) = dV(1);
+for iFlxSurf = 2:nflxsurf
+    V(iFlxSurf) = V(iFlxSurf-1) + dV(iFlxSurf);
+end
+
+% dV/dpsi
+derivOrder = 1;
+dV_dpsi = interpol(psiflu, V, psiflu, derivOrder);
     
 % Flux surface areas from TRANSP [m^{-2}]
 A_psi = 1e-4*TRANSP.T.SURF(itransp,:);
@@ -352,6 +363,8 @@ jData.Rgeo=Rgeo;
 jData.sqrt_psin_TRANSP=sqrt_psin_TRANSP;
 jData.sqrt_psin_chain2=sqrt_psin_chain2;
 jData.dV=dV;
+jData.V=V;
+jData.dV_dpsi=dV_dpsi;
 jData.A_psi=A_psi;
 jData.rpsi=rpsi_TRANSP;
 jData.psiflu = psiflu;
