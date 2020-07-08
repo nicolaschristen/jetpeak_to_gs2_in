@@ -1,6 +1,8 @@
 %% Script to reconstruct omega profiles for shots in the JETPEAK database.
 %
-%
+
+
+
 % vvvvvvvvvvvvvvvvvvvvvvv %
 % vvv USER PARAMETERS vvv %
 % vvvvvvvvvvvvvvvvvvvvvvv %
@@ -28,7 +30,9 @@ trinity_norm = 1;
 % Aply GS2 normalisation to plotted quantites ?
 nrm_gs2 = 0;
 % Plot profiles of deposition and fluxes ?
-plotverbose = 1;
+plotverbose = 0;
+% Zero out momentum pinch velocity ?
+zero_momPinch = 0;
 
 % y-axis plotting limits
 ylim_Q = [];
@@ -38,6 +42,7 @@ ylim_PI_over_Q = [];
 % ^^^^^^^^^^^^^^^^^^^^^^^ %
 % ^^^ USER PARAMETERS ^^^ %
 % ^^^^^^^^^^^^^^^^^^^^^^^ %
+
 
 
 format long
@@ -80,7 +85,8 @@ omegaFile = [dataFolder 'omegaReconstruct.csv'];
     'nrm_gs2', nrm_gs2, ...
     'depoParams', [], ...
     'jData', jData, ...
-    'trinity_norm', trinity_norm );
+    'trinity_norm', trinity_norm, ...
+    'zero_momPinch', zero_momPinch );
 % Choose whether to normalise to GS2 units
 if nrm_gs2
     r_sim = r_sim/jData.a;
@@ -142,13 +148,14 @@ depoParams.usr.cE = 0.5;
 usrParams{end+1} = depoParams.usr;
 
 omegaFile = [dataFolder 'omega_doublePower.csv'];
-[~, om_fittedDepo, srcQi, srcPI] = omega_reconstruct( ijp, tCoeffFile, ...
+[~, om_fittedDepo, srcQi, srcPI] = omega_reconstruct( ijp, fluxFile, ...
     'fname_omega', omegaFile, ...
     'use_Pi_over_Q', use_Pi_over_Q, ...
     'nrm_gs2', nrm_gs2, ...
     'depoParams', depoParams, ...
     'jData', jData, ...
-    'trinity_norm', trinity_norm );
+    'trinity_norm', trinity_norm, ...
+    'zero_momPinch', zero_momPinch );
 
 % Add corresponding deposition profiles to usrProfs
 usrProfs{end+1}.srcQi = srcQi;

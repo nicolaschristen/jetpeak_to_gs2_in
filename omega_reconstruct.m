@@ -6,16 +6,13 @@
 %     1. Turbulent fluxes have been computed in simulations, and the
 %        transport coefficients are calculated based on those fluxes.
 %
-%     2. Turbulent fluxes are computed based on user-specified deposition
+%     2. Pi and Q are computed based on user-specified deposition
 %        profiles, and the transport coeffients are from a previous but
 %        similar case where method 1. was used.
 %
 % Input :   ijp --  shot index in JETPEAK DB
-%           fname -- [usage 1] name of csv file containing computed fluxes,
-%                              see example_files/fluxes.csv for format.
-%                    [usage 2] name of csv file containing computed
-%                              transport coefficients, see
-%                              example_files/transpCoeff.csv for format.
+%           fname -- name of csv file containing computed fluxes,
+%                    see example_files/fluxes.csv for format.
 %           use_Pi_over_Q -- [kw, 0] if true, Pi/Q is used in reconstruction.
 %                            Else, Pi is used.
 %           depoParams -- [kw, []] if empty, sources from the experiment are used.
@@ -46,7 +43,8 @@ options_default = struct( 'use_Pi_over_Q', 0, ...
                           'jData', [], ...
                           'plotverbose', 0, ...
                           'fac_int', 1, ...
-                          'trinity_norm', 0 );
+                          'trinity_norm', 0, ...
+                          'zero_momPinch', 0 );
 opt = get_optargin(options_default, varargin);
 
 % Flag to tell if the deposition profile is from the experiment, or
@@ -78,24 +76,23 @@ if use_origDepo
 % Or compute the fluxes based on user-specified profiles,
 % and read pre-computed transport coefficients from a file.
 else
+    % Read the original GS2 fluxes and obtain the transport coefficients
+    [flx, tCoeff] = get_transpCoeff_from_gs2Fluxes(ijp, fname, 'jData', jData, ...
+                                                   'trinity_norm', opt.trinity_norm );
     % Get the user-specified deposition profiles
     [usrDepo, origDepo] = set_userDepo( ijp, opt.depoParams.orig, opt.depoParams.usr, ...
                                         'jData', jData, 'plotverbose', opt.plotverbose, ...
                                         'nrm_gs2', opt.nrm_gs2 );
-    % Compute the assiocated fluxes
-    flx.rpsi = usrDepo.rpsi;
-    flx.PI = flux_from_source(jData.dV, jData.dV_dpsi, usrDepo.srcPi);
-    flx.Qi = flux_from_source(jData.dV, jData.dV_dpsi, usrDepo.srcQi);
-
-    % Read transport coefficients from file
-    tCoeff = readtable(fname);
+    % Compute the assiociated fluxes
+    usrDepo.PI = flux_from_source(jData.dV, jData.dV_dpsi, usrDepo.srcPi);
+    usrDepo.Qi = flux_from_source(jData.dV, jData.dV_dpsi, usrDepo.srcQi);
 end
 
 %    ------------    %
 
 % Define an rpsi interval on which to reconstruct omega
-rpsiIn = min(tCoeff.rpsi); % innermost point
-rpsiOut = max(tCoeff.rpsi); % outermost point
+rpsiIn = min(flx.rpsi); % innermost point
+rpsiOut = max(flx.rpsi); % outermost point
 % Index in jData corresponding to rpsiOut
 iout_jData = find(abs(rpsiOut-jData.rpsi) == min(abs(rpsiOut-jData.rpsi)));
 nr = 1000;
@@ -107,6 +104,7 @@ recon.rpsi = linspace(rpsiIn,rpsiOut,nr);
 recon.momPinch = interp1(tCoeff.rpsi,tCoeff.momPinch,recon.rpsi);
 recon.momDif = interp1(tCoeff.rpsi,tCoeff.momDif,recon.rpsi);
 recon.heatDif = interp1(tCoeff.rpsi,tCoeff.heatDif,recon.rpsi);
+recon.Gamma = interp1(flx.rpsi,flx.Gamma,recon.rpsi);
 % For user-set or experimental quantities, use splines.
 recon.nref = interpol(jData.rpsi,jData.nref,recon.rpsi);
 recon.Rmaj = interpol(jData.rpsi,jData.Rmaj,recon.rpsi);
@@ -118,8 +116,13 @@ if use_origDepo
 % If fluxes are computed from user-specified deposition profiles,
 % then use splines.
 else
-    recon.PI = interpol(flx.rpsi,flx.PI,recon.rpsi);
-    recon.Qi = interpol(flx.rpsi,flx.Qi,recon.rpsi);
+    recon.PI = interpol(usrDepo.rpsi,usrDepo.PI,recon.rpsi);
+    recon.Qi = interpol(usrDepo.rpsi,usrDepo.Qi,recon.rpsi);
+end
+
+% If the user wishes to, zero out the momentum pinch velocity
+if opt.zero_momPinch
+    recon.momPinch = 0.0 * recon.momPinch;
 end
 
 %    ------------    %
@@ -130,11 +133,8 @@ dr = recon.rpsi(2) - recon.rpsi(1);
 
 % First compute exponent
 g = zeros(1,nr);
-if ~opt.use_Pi_over_Q
-    intgrd = recon.momPinch./(recon.momDif.*recon.Rmaj);
-else
-    intgrd = recon.momPinch./(recon.momDif.*recon.Rmaj);
-end
+intgrd = recon.momPinch./(recon.momDif.*recon.Rmaj) ...
+    + recon.Gamma./(recon.nref.*recon.momDif);
 for ir = nr-1:-1:1
     g(ir) = g(ir+1) + (intgrd(ir)+intgrd(ir+1)) * dr/2.0;
 end
