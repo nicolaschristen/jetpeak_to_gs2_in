@@ -123,6 +123,7 @@ end
 % If the user wishes to, zero out the momentum pinch velocity
 if opt.zero_momPinch
     recon.momPinch = 0.0 * recon.momPinch;
+    recon.Gamma = 0.0 * recon.Gamma;
 end
 
 %    ------------    %
