@@ -41,7 +41,7 @@ title('Fluxes in momentum eq.')
 % the transfer with electrons
 S_ext = jData.srcE_i_QASCOT + jData.srcE_ie_QASCOT;
 % Energy transfer term with electrons
-S_transf = jData.srcE_ie_QASCOT;
+S_transf = -jData.srcE_ie_QASCOT; % positive if Te > Ti
 % Turbulent heating, where <R^2 * Gamma>_psi is approximated by
 % <Gamma>_psi * Rmag^2.
 domega_dpsi = interpol(jData.psiflu,jData.omega,jData.psiflu,1);
@@ -61,4 +61,24 @@ xlabel('$r_\psi$ [m]')
 xlim([0 1])
 legend('$S_{\varepsilon,i}$','$S_{\Delta,i}$','$H_i$')
 title('Sources in heat eq.')
+
+
+% Integrated source terms in heat equation
+Q_ext = flux_from_source(jData.dV, jData.dV_dpsi, S_ext);
+Q_transf = flux_from_source(jData.dV, jData.dV_dpsi, S_transf);
+Q_tot = Q_ext + Q_transf;
+
+figure
+plot(jData.rpsi,Q_ext)
+hold on
+plot(jData.rpsi,Q_transf)
+hold on
+plot(jData.rpsi,Q_tot)
+grid on
+xlabel('$r_\psi$ [m]')
+xlim([0 1])
+ylim([-5e4, 20e4])
+leg = legend('$\frac{1}{V^\prime}\int dV\ S_{\varepsilon,i}$','$\frac{1}{V^\prime}\int dV\ S_{\Delta,i}$','total');
+set(leg, 'Location', 'NorthWest');
+title('Integrated heat sources')
 
