@@ -155,6 +155,22 @@ ylim(myylim)
 colorbar
 caxis(mycaxis)
 title('Tor mag flux from EFIT')
+% Compare poloidal magnetic flux
+figure('Position',[10,10,1500,600])
+subplot(1,2,1)
+contourf(EFIT.PSIR,EFIT.PSIZ,EPSI)
+xlim(myxlim)
+ylim(myylim)
+colorbar
+mycaxis = caxis;
+title('Pol mag flux from EFIT')
+subplot(1,2,2)
+contourf(TR_rect,TZ_rect,TPSI_rect')
+myxlim = xlim();
+myylim = ylim();
+colorbar
+caxis(mycaxis)
+title('Pol mag flux from TRANSP')
 
 % Plot gradient length of Te, should get : rise-plateau-rise-fall
 dTe_drho=interpol(rho_chain2,EL.TE(ijp,:),rho_chain2,1);
