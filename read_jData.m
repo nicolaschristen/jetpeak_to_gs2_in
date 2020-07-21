@@ -42,10 +42,10 @@ if ~isempty(idxAscot)
 shot = SAMPLE.SHOT(ijp);
 
 % Physical constants
-e = 1.602e-19; % elementary charge
-eps0 = 8.8541878128e-12; % vacuum permittivity
-mp = 1.673e-27; % proton mass
-me = 9.109e-31; % electron mass
+e = 1.602e-19; % elementary charge [C]
+eps0 = 8.8541878128e-12; % vacuum permittivity [F*m^-1]
+mp = 1.673e-27; % proton mass [kg]
+me = 9.109e-31; % electron mass [kg]
 
 % Assume Deuterium plasma with Carbon impurity
 Zmain=1.;
@@ -64,7 +64,7 @@ sign_PI_ASCOT_v_GS2 = -1;
 
 
 
-%% Extract mag. geometry from TRANSP
+%% Extract mag. geometry from TRANSP and EFIT
 
 % Poloidal flux [T m^2]
 % with definition equivalent to GS2's, i.e. without toroidal 2pi factor.
@@ -90,7 +90,7 @@ end
 derivOrder = 1;
 dV_dpsi = interpol(psiflu, V, psiflu, derivOrder);
     
-% Flux surface areas from TRANSP [m^{-2}]
+% Flux surface areas from TRANSP [m^2]
 A_psi = 1e-4*TRANSP.T.SURF(itransp,:);
 
 % Normalized sqrt(psi) []
@@ -104,9 +104,9 @@ Rmag=1.e-2*TRANSP.T.RAXIS(itransp);
 Rflu=1.e-2*permute(TRANSP.T.RFLU,[2 3 1]); % flux surface grid
 Rflu=Rflu(:,:,itransp); % (iflx,itheta)
 Rpsi= 1.e-2*TRANSP.T.PSIR; % rectangular grid
-a=(TRANSP.G.RMAJM(itransp,end)-TRANSP.G.RMAJM(itransp,1))/2.; % GS2 Lref
-rpsi_TRANSP=zeros(1,nflxsurf); % GS2 definition of rpsi for irho=2, not yet normalized
-Rmaj=zeros(1,nflxsurf); % Rmaj definition for iflux ~= 1, not yet normalized
+a=(TRANSP.G.RMAJM(itransp,end)-TRANSP.G.RMAJM(itransp,1))/2.; % GS2 Lref: half midplane diameter of LCFS
+rpsi_TRANSP=zeros(1,nflxsurf); % Half midplane diameter of flux surface
+Rmaj=zeros(1,nflxsurf); % major radius of flux surface's middle point on the midplane
 Rmax = TRANSP.G.RMAJM(itransp,2*nflxsurf+1); % Maximum major radius of confined plasma region
 for indx=1:nflxsurf
     rpsi_TRANSP(indx)= ...
@@ -139,11 +139,6 @@ delta=asin(delta(:,itransp));
 delta=delta.';
 ddelta_drpsi=interpol(rpsi_TRANSP,delta,rpsi_TRANSP,1);
 
-
-
-
-%% Extract q and plasma profiles from EFIT, EL and ION
-
 % Normalized sqrt(psi) grid used in chain2 []
 sqrt_psin_chain2=linspace(0.,1.,21);
 
@@ -153,23 +148,16 @@ q = sign_q * interpol(EFIT.RMJO(ijp,:), ...
 dq_drpsi=interpol(rpsi_TRANSP,q,rpsi_TRANSP,1);
 shat = rpsi_TRANSP./q .* dq_drpsi;
 
+
+
+
+%% Extract q and plasma profiles from EL and ION
+
 % Density [m^{-3}]
-ni=EL.NE(ijp,:)-6.0*ION.NC(ijp,:);
+ni=EL.NE(ijp,:)-Zimp*ION.NC(ijp,:);
 ni=interpol(sqrt_psin_chain2,ni,sqrt_psin_TRANSP);
 nc=interpol(sqrt_psin_chain2,ION.NC(ijp,:),sqrt_psin_TRANSP);
 ne=interpol(sqrt_psin_chain2,EL.NE(ijp,:),sqrt_psin_TRANSP);
-% Should carbon be included?
-add_carbon = zeros(1,nflxsurf);
-for iFlxSurf = 1:nflxsurf
-    if nc(iFlxSurf)/ni(iFlxSurf) >= 0.05
-        % yes
-        add_carbon(iFlxSurf) = 1;
-    else
-        % if not, then adapt ni so that QN holds
-        add_carbon(iFlxSurf) = 0;
-        ni(iFlxSurf) = ni(iFlxSurf) + Zimp/Zmain*nc(iFlxSurf);
-    end
-end
 dni_drpsi=interpol(rpsi_TRANSP,ni,rpsi_TRANSP,1);
 dne_drpsi=interpol(rpsi_TRANSP,ne,rpsi_TRANSP,1);
 dnc_drpsi=interpol(rpsi_TRANSP,nc,rpsi_TRANSP,1);
@@ -183,8 +171,7 @@ tc=ti; % no direct measurement for T_imp
 dtc_drpsi=dti_drpsi;
 
 % Plasma pressure [Pa]
-p=e*ni.*ti+e*ne.*te;
-p(add_carbon==1) = p(add_carbon==1)+e*nc(add_carbon==1).*tc(add_carbon==1);
+p = ni*e.*ti + ne*e.*te + nc*e.*tc;
 dp_drpsi=interpol(rpsi_TRANSP,p,rpsi_TRANSP,1);
 
 % Collisionality (See notes) [s^{-1}]
@@ -211,14 +198,7 @@ omega = sign_mach.*abs(omega);
 domega_drpsi = sign_domega_drpsi.*abs(domega_drpsi);
 
 % Effective charge [C]
-Zeff = zeros(1,nflxsurf);
-for iFlxSurf = 1:nflxsurf
-    if add_carbon(iFlxSurf)
-       Zeff(iFlxSurf) = (Zmain^2*ni(iFlxSurf)+Zimp^2*nc(iFlxSurf))./(Zmain*ni(iFlxSurf)+Zimp*nc(iFlxSurf));
-    else
-       Zeff(iFlxSurf) = Zmain;
-    end
-end
+Zeff = (Zmain^2*ni+Zimp^2*nc)./(Zmain*ni+Zimp*nc);
 
 
 
@@ -382,7 +362,6 @@ jData.ni=ni;
 jData.dni_drpsi=dni_drpsi;
 jData.ne=ne;
 jData.dne_drpsi=dne_drpsi;
-jData.add_carbon=add_carbon;
 jData.nc=nc;
 jData.dnc_drpsi=dnc_drpsi;
 jData.ti=ti;

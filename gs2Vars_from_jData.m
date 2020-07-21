@@ -25,9 +25,6 @@ vthref=jData.vthref;
 rhoref=jData.rhoref;
 rhostar=jData.rhostar;
 
-% Have carbon impurities been included?
-gs2Vars.add_carbon = jData.add_carbon;
-
 % theta_grid_parameters
 gs2Vars.Rmaj=jData.Rmaj/a;
 gs2Vars.R_geo=jData.Rgeo/a;

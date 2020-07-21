@@ -6,10 +6,15 @@
 %           template_fName -- name of GS2 input file template
 %           new_fName -- name(s) of input file to be generated (same size as rpsi_nrm)
 %                        if multiple names, pass them as a cell-array.
+%           kinetic_impur -- [kw, 0] booleans for each file indicating if impurities
+%                            are treated as a kinetic species
 %
 % Output:   -
 %
-function create_gs2_inFile(ijp,rpsi_nrm,template_fName,new_fName)
+function create_gs2_inFile(ijp,rpsi_nrm,template_fName,new_fName, varargin)
+
+opt_defaults = struct( 'kinetic_impur', zeros(1,numel(rpsi_nrm)) );
+opt = get_optargin(opt_defaults, varargin);
 
 if ~iscell(new_fName)
     new_fName = {new_fName};
@@ -55,7 +60,7 @@ for iFile = 1:nFiles
     fprintf(['In the template input file, parameters need to be specified \n', ...
         'in the following format (including spaces) :\n', ...
         'name = val\n\n'])
-    if gs2Vars.add_carbon(iFlxSurf)
+    if opt.kinetic_impur(iFile)
         fprintf(['Carbon is being included. Please make sure that \n'...
             'the template input file has 3 sets of species namelists'])
     end
