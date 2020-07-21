@@ -6,7 +6,7 @@
 !-----------------------------------------------------------------
 
 &collisions_knobs
- collision_model = 'none'
+ collision_model = 'default'
 /
 
 !&hyper_knobs
@@ -85,7 +85,7 @@
 ! velocity space grid
 &le_grids_knobs
  ngauss = 5  ! 2*nguass is the number of untrapped pitch angles per sign of vpar
- negrid = 12
+ negrid = 16
  vcut = 2.5  ! max |v| value on the grid
 /
 &dist_fn_knobs
