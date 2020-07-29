@@ -66,7 +66,7 @@ sign_PI_ASCOT_v_GS2 = -1;
 
 %% Extract mag. geometry from TRANSP and EFIT
 
-% Poloidal flux [T m^2]
+% Poloidal flux [T m^2 / rad]
 % with definition equivalent to GS2's, i.e. without toroidal 2pi factor.
 % See Edmund's thesis and the TRANSP variable list.
 psi=permute(TRANSP.T.PSI,[3 2 1]); % on rectangular grid
@@ -77,6 +77,8 @@ psiflu=psiflu.';
 nflxsurf=numel(psiflu); % number of flux surf.
 
 % Volume elements dV(i) = V(psi(i))-V(psi(i-1))
+% In TRANSP, [DVOL] = cm^3
+% But here [TRANSP.G.DVOL] = m^3
 dV = TRANSP.G.DVOL(itransp,:);
 
 % Volume of flux surfaces
@@ -391,7 +393,7 @@ jData.Qe_PENCIL = Qe_PENCIL;
 jData.Qe_QASCOT = Qe_QASCOT;
 % Normalisation factor
 if opt.trinity_norm
-    jData.QNorm = jData.nref*e.*jData.tref.*jData.vthref.*jData.rhostar.^2.*jData.gradPsiAvg;
+    jData.QNorm = jData.nref*e.*jData.tref.*jData.vthref.*jData.rhostar.^2.*jData.A_psi./jData.dV_dpsi;
 else
     jData.QNorm = jData.nref*e.*jData.tref.*jData.vthref.*jData.rhostar.^2./jData.dx_dpsi;
 end
@@ -403,7 +405,7 @@ jData.PI_ASCOT = PI_ASCOT;
 % Normalisation factor
 if opt.trinity_norm
     jData.PINorm = jData.nref*jData.mref.*jData.vthref.^2.*jData.a.*jData.rhostar.^2 ...
-                   .*jData.gradPsiAvg;
+                   .*jData.A_psi./jData.dV_dpsi;
 else
     jData.PINorm = jData.nref*jData.mref.*jData.vthref.^2.*jData.a.*jData.rhostar.^2 ...
                    ./jData.dx_dpsi;
@@ -411,7 +413,7 @@ end
 
 % Normalisation factor for the particle flux
 if opt.trinity_norm
-    jData.GammaNorm = jData.nref.*jData.vthref.*jData.rhostar.^2.*jData.gradPsiAvg;
+    jData.GammaNorm = jData.nref.*jData.vthref.*jData.rhostar.^2.*jData.A_psi./jData.dV_dpsi;
 else
     jData.GammaNorm = jData.nref.*jData.vthref.*jData.rhostar.^2./jData.dx_dpsi;
 end
@@ -421,7 +423,7 @@ end
 
 %% Check data prof., interpolations, derivatives (if plot_verbose)
 
-for iplot = 1:numel(opt.check_iFlxSurf)
+    for iplot = 1:numel(opt.check_iFlxSurf)
 
     iFlxSurf = opt.check_iFlxSurf(iplot);
     
