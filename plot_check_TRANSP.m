@@ -142,19 +142,19 @@ title('$\psi$ from TRANSP rectangular grid, red is EFIT')
 % Compare toroidal magnetic flux
 figure('Position',[10,10,1500,600])
 subplot(1,2,1)
-contourf(TR_flu,TZ_flu,TPSI_flu_thet)
+contourf(EFIT.PSIR,EFIT.PSIZ,EPSI*2*pi)
 myxlim = xlim();
 myylim = ylim();
 colorbar
 mycaxis = caxis;
-title('Tor mag flux from TRANSP')
+title('EFIT.PSI $\times\ 2\pi$')
 subplot(1,2,2)
-contourf(EFIT.PSIR,EFIT.PSIZ,EPSI/6)
+contourf(TR_flu,TZ_flu,TPSItor_flu_thet)
 xlim(myxlim)
 ylim(myylim)
 colorbar
 caxis(mycaxis)
-title('Tor mag flux from EFIT')
+title('TRANSP.T.TRFLX')
 % Compare poloidal magnetic flux
 figure('Position',[10,10,1500,600])
 subplot(1,2,1)
@@ -163,14 +163,14 @@ xlim(myxlim)
 ylim(myylim)
 colorbar
 mycaxis = caxis;
-title('Pol mag flux from EFIT')
+title('EFIT.PSI')
 subplot(1,2,2)
 contourf(TR_rect,TZ_rect,TPSI_rect')
 myxlim = xlim();
 myylim = ylim();
 colorbar
 caxis(mycaxis)
-title('Pol mag flux from TRANSP')
+title('TRANSP.T.PLFLX')
 
 % Plot gradient length of Te, should get : rise-plateau-rise-fall
 dTe_drho=interpol(rho_chain2,EL.TE(ijp,:),rho_chain2,1);
