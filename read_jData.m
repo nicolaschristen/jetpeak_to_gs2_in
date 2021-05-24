@@ -37,6 +37,7 @@ if ~isempty(idxAscot)
     % Per ijp, there are many ASCOT runs with slightly different
     % settings. Here, we simply pick the first run in the list.
     idxAscot = idxAscot(1);
+end
 
 % JET shot number corresponding to ijp
 shot = SAMPLE.SHOT(ijp);
